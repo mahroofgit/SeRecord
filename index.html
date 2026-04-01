@@ -33,9 +33,12 @@
         .group-header { background: #2c2c2e; padding: 8px 12px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: var(--accent); font-size: 0.9rem;}
         .sub-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 0.85rem; border-bottom: 1px solid #222; color: #ccc; }
         
-        .settings-btn { background: #2c2c2e; color: var(--sub); border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 20px; font-size: 0.8rem; }
+        .settings-btn { background: #2c2c2e; color: var(--sub); border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 10px; font-size: 0.8rem; }
         .hidden { display: none; }
-        small { color: #666; font-size: 0.7rem; display: block; margin-top: 2px; }
+
+        /* Setup UI Specifics */
+        .edit-list { margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; }
+        .edit-item { display: flex; justify-content: space-between; align-items: center; background: #1c1c1e; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
     </style>
 </head>
 <body>
@@ -76,32 +79,40 @@
     </div>
 
     <div id="settingsUI" class="hidden">
-        <h3>Product Setup</h3>
-        <div class="form-group"><label>Product Name</label><input class="std" id="newProdName" placeholder="e.g. Plant Pot"></div>
+        <h3 id="setupTitle">Add Product</h3>
+        <div class="form-group"><label>Product Name</label><input class="std" id="newProdName"></div>
         <div class="form-group">
             <label>Varieties & Prices</label>
-            <input class="std" id="newProdVars" placeholder="Gray:12.5, Gold:15">
-            <small>Format: Name:Price, Name:Price</small>
+            <input class="std" id="newProdVars">
+            <small style="color:#666; font-size:0.6rem;">Format: Gray:12.5, Gold:15</small>
         </div>
-        <button class="log-btn" onclick="addNewProduct()">ADD PRODUCT</button>
-        <button class="settings-btn" onclick="toggleSettings()">BACK TO SALES</button>
-        <button class="settings-btn" style="color: #ff453a;" onclick="clearAll()">RESET ALL DATA</button>
+        <button class="log-btn" id="saveProdBtn" onclick="saveProduct()">SAVE PRODUCT</button>
+        <button class="settings-btn" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">CANCEL EDIT</button>
+        
+        <div class="edit-list" id="editList">
+            <label>Manage Existing</label>
+            </div>
+
+        <button class="settings-btn" style="margin-top:40px;" onclick="toggleSettings()">BACK TO SALES</button>
+        <button class="settings-btn" style="color: #ff453a; border-color:#ff453a33;" onclick="clearAll()">RESET EVERYTHING</button>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3d_config_v6')) || {
+        let config = JSON.parse(localStorage.getItem('3d_config_v7')) || {
             "Plant Pot": { "Gray Plant": 12.5, "Gray Flower": 11.25, "Gold Plant": 12.5, "Gold Flowers": 15 },
             "Cookie Cutter": { "Standard": 4 }
         };
-        let sales = JSON.parse(localStorage.getItem('3d_sales_v6')) || [];
+        let sales = JSON.parse(localStorage.getItem('3d_sales_v7')) || [];
         let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" };
+        let editingKey = null;
 
         function toggleSettings() {
             document.getElementById('mainUI').classList.toggle('hidden');
             document.getElementById('settingsUI').classList.toggle('hidden');
+            renderEditList();
         }
 
-        function addNewProduct() {
+        function saveProduct() {
             const name = document.getElementById('newProdName').value;
             const varString = document.getElementById('newProdVars').value;
             if(!name || !varString) return;
@@ -109,12 +120,61 @@
             let varMap = {};
             varString.split(',').forEach(item => {
                 let [vName, vPrice] = item.split(':');
-                varMap[vName.trim()] = parseFloat(vPrice) || 0;
+                if(vName) varMap[vName.trim()] = parseFloat(vPrice) || 0;
             });
 
+            // If we were editing, delete the old key first (in case name changed)
+            if(editingKey && editingKey !== name) delete config[editingKey];
+            
             config[name] = varMap;
-            localStorage.setItem('3d_config_v6', JSON.stringify(config));
-            initDropdowns(); toggleSettings();
+            localStorage.setItem('3d_config_v7', JSON.stringify(config));
+            cancelEdit();
+            initDropdowns();
+            renderEditList();
+        }
+
+        function editProduct(key) {
+            editingKey = key;
+            document.getElementById('setupTitle').innerText = "Editing: " + key;
+            document.getElementById('newProdName').value = key;
+            const vars = Object.entries(config[key]).map(([n, p]) => `${n}:${p}`).join(', ');
+            document.getElementById('newProdVars').value = vars;
+            document.getElementById('saveProdBtn').innerText = "UPDATE PRODUCT";
+            document.getElementById('cancelEditBtn').style.display = "block";
+        }
+
+        function cancelEdit() {
+            editingKey = null;
+            document.getElementById('setupTitle').innerText = "Add Product";
+            document.getElementById('newProdName').value = "";
+            document.getElementById('newProdVars').value = "";
+            document.getElementById('saveProdBtn').innerText = "SAVE PRODUCT";
+            document.getElementById('cancelEditBtn').style.display = "none";
+        }
+
+        function deleteConfigItem(key) {
+            if(confirm("Remove " + key + " from menu?")) {
+                delete config[key];
+                localStorage.setItem('3d_config_v7', JSON.stringify(config));
+                initDropdowns();
+                renderEditList();
+            }
+        }
+
+        function renderEditList() {
+            const list = document.getElementById('editList');
+            let html = '<label>Manage Existing</label>';
+            for (let key in config) {
+                html += `
+                <div class="edit-item">
+                    <span>${key}</span>
+                    <div>
+                        <button onclick="editProduct('${key}')" style="background:#007aff; border:none; color:white; padding:5px 10px; border-radius:4px; margin-right:5px;">Edit</button>
+                        <button onclick="deleteConfigItem('${key}')" style="background:#ff453a; border:none; color:white; padding:5px 10px; border-radius:4px;">X</button>
+                    </div>
+                </div>`;
+            }
+            list.innerHTML = html;
         }
 
         function initDropdowns() {
@@ -162,7 +222,7 @@
             const cat = document.getElementById('selCategory').value;
             const v = document.getElementById('selVariant').value;
             sales.unshift({ cat: cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total) });
-            localStorage.setItem('3d_sales_v6', JSON.stringify(sales));
+            localStorage.setItem('3d_sales_v7', JSON.stringify(sales));
             render();
         }
 
@@ -186,7 +246,7 @@
             document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
         }
 
-        function clearAll() { if(confirm("Wipe everything?")) { localStorage.clear(); location.reload(); } }
+        function clearAll() { if(confirm("Wipe everything? This deletes ALL sales and ALL custom products.")) { localStorage.clear(); location.reload(); } }
         window.onload = () => { initDropdowns(); render(); setActive('total'); };
     </script>
 </body>
