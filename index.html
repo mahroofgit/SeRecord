@@ -7,64 +7,50 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow-x: hidden; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
         
-        .dashboard { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); }
+        .dashboard { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center;}
         .total-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; color: var(--sub); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; color: var(--sub); font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; }
         
-        select { width: 100%; background: #2c2c2e; border: none; color: white; padding: 12px; border-radius: 10px; font-size: 1rem; }
+        select { width: 100%; background: #2c2c2e; border: none; color: white; padding: 12px; border-radius: 10px; font-size: 1rem; appearance: none; }
 
-        /* Rolling Picker */
-        .picker-frame {
-            height: 120px; background: #2c2c2e; border-radius: 12px; overflow-y: scroll;
-            scroll-snap-type: y mandatory; position: relative; border: 1px solid #444;
-        }
-        .picker-frame::-webkit-scrollbar { display: none; }
-        .picker-item {
-            height: 40px; line-height: 40px; text-align: center; font-size: 1.2rem;
-            scroll-snap-align: center; color: #666; transition: 0.2s;
-        }
-        .picker-item.active { color: var(--accent); font-weight: bold; font-size: 1.5rem; }
-        .picker-highlight {
-            position: absolute; top: 40px; left: 0; right: 0; height: 40px;
-            border-top: 1px solid #444; border-bottom: 1px solid #444; pointer-events: none;
-        }
+        /* Tri-Input Logic */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .box { background: #2c2c2e; padding: 10px; border-radius: 10px; border: 1px solid #444; position: relative; }
+        .box.active { border-color: var(--accent); background: #263529; }
+        .box-label { font-size: 0.6rem; color: var(--sub); display: block; margin-bottom: 2px; }
+        .box-val { font-size: 1.1rem; font-weight: bold; width: 100%; background: transparent; border: none; color: white; padding: 0; }
 
-        /* Numpad & Price Display */
-        .price-display {
-            background: #2c2c2e; padding: 15px; border-radius: 10px; text-align: right;
-            font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; border: 1px solid #444;
-        }
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .num-btn {
-            background: #3a3a3c; border: none; color: white; padding: 15px;
-            border-radius: 8px; font-size: 1.2rem; font-weight: 600;
-        }
-        .num-btn:active { background: #505054; }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
+        .num-btn { background: #2c2c2e; border: none; color: white; padding: 12px; border-radius: 8px; font-size: 1.2rem; }
+        .num-btn:active { background: #444; }
 
-        .log-btn { 
-            background: var(--accent); color: black; font-weight: bold; width: 100%; 
-            padding: 18px; border-radius: 12px; border: none; font-size: 1.1rem; margin-top: 15px;
-        }
+        .log-btn { background: var(--accent); color: black; font-weight: bold; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; }
 
-        /* List UI */
-        .sale-card { background: var(--card); padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .sale-date { color: var(--sub); font-size: 0.7rem; display: block; }
+        /* Summary Section */
+        .summary-box { background: #1c1c1e; border-radius: 12px; padding: 12px; margin-top: 20px; font-size: 0.85rem; }
+        .summary-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 6px 0; }
+        
+        .sale-card { background: var(--card); padding: 10px; border-radius: 10px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .sale-meta { font-size: 0.7rem; color: var(--sub); margin-top: 2px; }
     </style>
 </head>
 <body>
 
     <div class="dashboard">
-        <div style="color:var(--sub); font-size:0.7rem;">TOTAL SALES</div>
-        <div class="total-val">$<span id="grandTotal">0.00</span></div>
+        <div>
+            <div style="color:var(--sub); font-size:0.7rem;">GRAND TOTAL</div>
+            <div class="total-val">$<span id="grandTotal">0.00</span></div>
+        </div>
+        <button onclick="clearData()" style="background:none; border:1px solid #444; color:#666; border-radius:5px; padding:5px;">Reset</button>
     </div>
 
     <div class="form-group">
         <label>Product & Variety</label>
-        <select id="mainItem" onchange="resetPrice()">
+        <select id="mainItem" onchange="autoFillDefault()">
             <optgroup label="Plant Pots">
                 <option value="Gray Plant">Gray Plant</option>
                 <option value="Gray Flower">Gray Flower</option>
@@ -75,119 +61,136 @@
         </select>
     </div>
 
-    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-        <div style="flex: 1;">
-            <label>Count (Roll)</label>
-            <div class="picker-frame" id="qtyPicker" onscroll="updatePicker()">
-                <div style="height: 40px;"></div> <div id="pickerItems"></div>
-                <div style="height: 40px;"></div> <div class="picker-highlight"></div>
-            </div>
+    <div class="input-grid">
+        <div class="box" id="box-qty" onclick="setActive('qty')">
+            <span class="box-label">COUNT</span>
+            <div class="box-val" id="disp-qty">1</div>
         </div>
-        <div style="flex: 1.5;">
-            <label>Price</label>
-            <div class="price-display" id="priceOut">$0.00</div>
-            <div class="numpad">
-                <button class="num-btn" onclick="pressNum('1')">1</button>
-                <button class="num-btn" onclick="pressNum('2')">2</button>
-                <button class="num-btn" onclick="pressNum('3')">3</button>
-                <button class="num-btn" onclick="pressNum('4')">4</button>
-                <button class="num-btn" onclick="pressNum('5')">5</button>
-                <button class="num-btn" onclick="pressNum('6')">6</button>
-                <button class="num-btn" onclick="pressNum('7')">7</button>
-                <button class="num-btn" onclick="pressNum('8')">8</button>
-                <button class="num-btn" onclick="pressNum('9')">9</button>
-                <button class="num-btn" onclick="pressNum('.')">.</button>
-                <button class="num-btn" onclick="pressNum('0')">0</button>
-                <button class="num-btn" onclick="pressNum('C')" style="color:#ff453a">C</button>
-            </div>
+        <div class="box" id="box-unit" onclick="setActive('unit')">
+            <span class="box-label">UNIT $</span>
+            <div class="box-val" id="disp-unit">15.00</div>
         </div>
+        <div class="box" id="box-total" onclick="setActive('total')">
+            <span class="box-label">TOTAL $</span>
+            <div class="box-val" id="disp-total">15.00</div>
+        </div>
+    </div>
+
+    <div class="numpad">
+        <button class="num-btn" onclick="press('1')">1</button>
+        <button class="num-btn" onclick="press('2')">2</button>
+        <button class="num-btn" onclick="press('3')">3</button>
+        <button class="num-btn" onclick="press('4')">4</button>
+        <button class="num-btn" onclick="press('5')">5</button>
+        <button class="num-btn" onclick="press('6')">6</button>
+        <button class="num-btn" onclick="press('7')">7</button>
+        <button class="num-btn" onclick="press('8')">8</button>
+        <button class="num-btn" onclick="press('9')">9</button>
+        <button class="num-btn" onclick="press('.')">.</button>
+        <button class="num-btn" onclick="press('0')">0</button>
+        <button class="num-btn" onclick="press('C')" style="color:#ff453a">C</button>
     </div>
 
     <button class="log-btn" onclick="logSale()">LOG SALE</button>
 
-    <div id="historyLog" style="margin-top: 20px; padding-bottom: 50px;"></div>
+    <div id="summaryArea" class="summary-box"></div>
+    
+    <div id="historyLog" style="margin-top: 15px; padding-bottom: 50px;"></div>
 
     <script>
-        let sales = JSON.parse(localStorage.getItem('printSales_v3')) || [];
-        let priceBuffer = "";
-        let currentQty = 1;
+        let sales = JSON.parse(localStorage.getItem('3d_sales_v4')) || [];
+        let activeField = 'total';
+        let buffers = { qty: "1", unit: "15", total: "15" };
 
-        // Initialize Picker
-        const picker = document.getElementById('pickerItems');
-        for(let i=1; i<=50; i++) {
-            picker.innerHTML += `<div class="picker-item" data-val="${i}">${i}</div>`;
+        function setActive(field) {
+            activeField = field;
+            document.querySelectorAll('.box').forEach(b => b.classList.remove('active'));
+            document.getElementById(`box-${field}`).classList.add('active');
+            buffers[field] = ""; 
         }
 
-        function updatePicker() {
-            const frame = document.getElementById('qtyPicker');
-            const items = document.querySelectorAll('.picker-item');
-            const index = Math.round(frame.scrollTop / 40);
-            items.forEach((item, i) => {
-                item.classList.toggle('active', i === index);
-            });
-            currentQty = index + 1;
-            
-            // Auto-update price for Cookie Cutter
-            if (document.getElementById('mainItem').value === "Cookie Cutter") {
-                priceBuffer = (currentQty * 4).toString();
-                updatePriceDisplay();
+        function press(n) {
+            if (n === 'C') buffers[activeField] = "";
+            else buffers[activeField] += n;
+            syncMath(activeField);
+            updateDisplays();
+        }
+
+        function syncMath(source) {
+            let q = parseFloat(buffers.qty) || 0;
+            let u = parseFloat(buffers.unit) || 0;
+            let t = parseFloat(buffers.total) || 0;
+
+            if (source === 'qty' || source === 'unit') {
+                buffers.total = (q * u).toFixed(2);
+            } else if (source === 'total' && q > 0) {
+                buffers.unit = (t / q).toFixed(2);
             }
         }
 
-        function pressNum(n) {
-            if (n === 'C') priceBuffer = "";
-            else if (n === '.' && priceBuffer.includes('.')) return;
-            else priceBuffer += n;
-            updatePriceDisplay();
+        function updateDisplays() {
+            document.getElementById('disp-qty').innerText = buffers.qty || "0";
+            document.getElementById('disp-unit').innerText = buffers.unit || "0.00";
+            document.getElementById('disp-total').innerText = buffers.total || "0.00";
         }
 
-        function updatePriceDisplay() {
-            const val = parseFloat(priceBuffer) || 0;
-            document.getElementById('priceOut').innerText = "$" + val.toFixed(2);
-        }
-
-        function resetPrice() {
+        function autoFillDefault() {
             const item = document.getElementById('mainItem').value;
-            priceBuffer = (item === "Cookie Cutter") ? (currentQty * 4).toString() : "15";
-            updatePriceDisplay();
+            buffers.qty = "1";
+            buffers.unit = (item === "Cookie Cutter") ? "4" : "15";
+            syncMath('unit');
+            updateDisplays();
         }
 
         function logSale() {
             const item = document.getElementById('mainItem').value;
-            const finalPrice = parseFloat(priceBuffer) || (item === "Cookie Cutter" ? currentQty * 4 : 15);
-            
-            const entry = {
+            sales.unshift({
                 id: Date.now(),
                 item: item,
-                qty: currentQty,
-                total: finalPrice,
+                qty: parseFloat(buffers.qty),
+                unit: parseFloat(buffers.unit),
+                total: parseFloat(buffers.total),
                 date: new Date().toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})
-            };
-
-            sales.unshift(entry);
-            localStorage.setItem('printSales_v3', JSON.stringify(sales));
-            priceBuffer = "";
+            });
+            localStorage.setItem('3d_sales_v4', JSON.stringify(sales));
             render();
         }
 
         function render() {
             const log = document.getElementById('historyLog');
+            const summary = document.getElementById('summaryArea');
             let grandTotal = 0;
+            let stats = {};
+
             log.innerHTML = '';
             sales.forEach((s, i) => {
                 grandTotal += s.total;
+                // Grouping logic
+                stats[s.item] = (stats[s.item] || 0) + s.total;
+
                 log.innerHTML += `
                     <div class="sale-card" onclick="deleteSale(${i})">
-                        <div><strong>${s.qty}x ${s.item}</strong><span class="sale-date">${s.date}</span></div>
+                        <div>
+                            <strong>${s.qty}x ${s.item}</strong>
+                            <div class="sale-meta">$${s.unit.toFixed(2)} ea • ${s.date}</div>
+                        </div>
                         <div style="color:var(--accent); font-weight:bold;">$${s.total.toFixed(2)}</div>
                     </div>`;
             });
+
+            // Render Summary
+            summary.innerHTML = '<label>Sales Summary</label>';
+            for (let item in stats) {
+                summary.innerHTML += `<div class="summary-row"><span>${item}</span><strong>$${stats[item].toFixed(2)}</strong></div>`;
+            }
+
             document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
         }
 
-        function deleteSale(i) { if(confirm("Delete?")) { sales.splice(i,1); localStorage.setItem('printSales_v3', JSON.stringify(sales)); render(); } }
+        function deleteSale(i) { if(confirm("Delete?")) { sales.splice(i,1); localStorage.setItem('3d_sales_v4', JSON.stringify(sales)); render(); } }
+        function clearData() { if(confirm("Clear all?")) { sales = []; localStorage.setItem('3d_sales_v4', JSON.stringify(sales)); render(); } }
 
-        window.onload = () => { render(); resetPrice(); updatePicker(); };
+        window.onload = () => { setActive('total'); autoFillDefault(); render(); };
     </script>
 </body>
 </html>
