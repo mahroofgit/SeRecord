@@ -3,42 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Sales Pro</title>
+    <title>3D Sales Pro v8</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; --border: #333; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 100px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; }
         
+        /* Dashboard & Layout */
         .dashboard { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center;}
         .total-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
-
         .form-group { margin-bottom: 12px; }
         label { display: block; color: var(--sub); font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; font-weight: bold; }
-        
         select, input.std { width: 100%; background: #2c2c2e; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
 
+        /* Input Grid & Numpad */
         .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .box { background: #2c2c2e; padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
         .box.active { border-color: var(--accent); background: #263529; }
         .box-label { font-size: 0.6rem; color: var(--sub); display: block; margin-bottom: 2px; }
         .box-val { font-size: 1.1rem; font-weight: bold; color: white; }
-
         .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
         .num-btn { background: #2c2c2e; border: none; color: white; padding: 15px; border-radius: 8px; font-size: 1.2rem; }
-        .num-btn:active { background: #444; }
 
+        /* Summary & History List */
         .log-btn { background: var(--accent); color: black; font-weight: bold; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; }
-
         .summary-box { background: #1c1c1e; border-radius: 12px; padding: 12px; margin-top: 20px; }
         .group-header { background: #2c2c2e; padding: 8px 12px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: var(--accent); font-size: 0.9rem;}
         .sub-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 0.85rem; border-bottom: 1px solid #222; color: #ccc; }
-        
-        .settings-btn { background: #2c2c2e; color: var(--sub); border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 10px; font-size: 0.8rem; }
-        .hidden { display: none; }
+        .history-card { background: var(--card); padding: 12px; border-radius: 10px; margin-top: 8px; border: 1px solid #333; }
+        .hist-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .hist-date { font-size: 0.65rem; color: var(--sub); }
 
-        /* Setup UI Specifics */
-        .edit-list { margin-top: 15px; border-top: 1px solid #333; padding-top: 15px; }
-        .edit-item { display: flex; justify-content: space-between; align-items: center; background: #1c1c1e; padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #333; }
+        /* Setup/Edit Styles */
+        .variant-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 8px; margin-bottom: 8px; }
+        .edit-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2e; padding: 10px; border-radius: 10px; margin-top: 8px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -48,16 +47,16 @@
             <div style="color:var(--sub); font-size:0.7rem;">GRAND TOTAL</div>
             <div class="total-val">$<span id="grandTotal">0.00</span></div>
         </div>
-        <button onclick="toggleSettings()" style="background:none; border:1px solid #444; color:#666; border-radius:5px; padding:5px 10px;">Setup</button>
+        <button onclick="toggleSettings()" style="background:none; border:1px solid #444; color:#666; border-radius:5px; padding:8px 12px;">Setup</button>
     </div>
 
     <div id="mainUI">
         <div class="form-group">
-            <label>Product Category</label>
+            <label>Category</label>
             <select id="selCategory" onchange="loadVariants()"></select>
         </div>
         <div class="form-group" id="variantGroup">
-            <label>Variety / Color</label>
+            <label>Variety</label>
             <select id="selVariant" onchange="autoFillPrice()"></select>
         </div>
 
@@ -76,105 +75,83 @@
 
         <button class="log-btn" onclick="logSale()">LOG SALE</button>
         <div id="summaryArea"></div>
+        <div id="historyLog" style="margin-top: 30px;"><label>Sales Details</label></div>
     </div>
 
     <div id="settingsUI" class="hidden">
         <h3 id="setupTitle">Add Product</h3>
-        <div class="form-group"><label>Product Name</label><input class="std" id="newProdName"></div>
-        <div class="form-group">
-            <label>Varieties & Prices</label>
-            <input class="std" id="newProdVars">
-            <small style="color:#666; font-size:0.6rem;">Format: Gray:12.5, Gold:15</small>
-        </div>
-        <button class="log-btn" id="saveProdBtn" onclick="saveProduct()">SAVE PRODUCT</button>
-        <button class="settings-btn" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">CANCEL EDIT</button>
+        <div class="form-group"><label>Category Name</label><input class="std" id="newProdName" placeholder="e.g. Plant Pot"></div>
+        <label>Varieties & Default Prices</label>
+        <div id="variantInputs"></div>
+        <button onclick="addVariantRow()" style="background:#2c2c2e; border:1px dashed #555; color:var(--sub); width:100%; padding:10px; border-radius:8px; margin-bottom:15px;">+ Add Another Variety</button>
         
-        <div class="edit-list" id="editList">
-            <label>Manage Existing</label>
-            </div>
+        <button class="log-btn" onclick="saveProduct()">SAVE PRODUCT</button>
+        <button onclick="cancelEdit()" style="width:100%; color:var(--sub); background:none; border:none; padding:10px; margin-top:10px;">Cancel / Back</button>
 
-        <button class="settings-btn" style="margin-top:40px;" onclick="toggleSettings()">BACK TO SALES</button>
-        <button class="settings-btn" style="color: #ff453a; border-color:#ff453a33;" onclick="clearAll()">RESET EVERYTHING</button>
+        <div id="editList" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;"></div>
+        <button class="log-btn" style="background:#ff453a; color:white; margin-top:50px;" onclick="clearAll()">RESET ENTIRE APP</button>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3d_config_v7')) || {
+        let config = JSON.parse(localStorage.getItem('3d_config_v8')) || {
             "Plant Pot": { "Gray Plant": 12.5, "Gray Flower": 11.25, "Gold Plant": 12.5, "Gold Flowers": 15 },
             "Cookie Cutter": { "Standard": 4 }
         };
-        let sales = JSON.parse(localStorage.getItem('3d_sales_v7')) || [];
-        let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" };
-        let editingKey = null;
+        let sales = JSON.parse(localStorage.getItem('3d_sales_v8')) || [];
+        let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" }, editingKey = null;
 
         function toggleSettings() {
             document.getElementById('mainUI').classList.toggle('hidden');
             document.getElementById('settingsUI').classList.toggle('hidden');
+            if(!editingKey) addVariantRow(true);
             renderEditList();
+        }
+
+        function addVariantRow(clear = false) {
+            const container = document.getElementById('variantInputs');
+            if(clear) container.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'variant-row';
+            div.innerHTML = `<input class="std var-name" placeholder="Name"><input class="std var-price" type="number" placeholder="$"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ff453a; font-size:1.2rem;">×</button>`;
+            container.appendChild(div);
         }
 
         function saveProduct() {
             const name = document.getElementById('newProdName').value;
-            const varString = document.getElementById('newProdVars').value;
-            if(!name || !varString) return;
-
+            const rows = document.querySelectorAll('.variant-row');
+            if(!name) return;
             let varMap = {};
-            varString.split(',').forEach(item => {
-                let [vName, vPrice] = item.split(':');
-                if(vName) varMap[vName.trim()] = parseFloat(vPrice) || 0;
+            rows.forEach(row => {
+                let vN = row.querySelector('.var-name').value;
+                let vP = row.querySelector('.var-price').value;
+                if(vN) varMap[vN.trim()] = parseFloat(vP) || 0;
             });
-
-            // If we were editing, delete the old key first (in case name changed)
             if(editingKey && editingKey !== name) delete config[editingKey];
-            
             config[name] = varMap;
-            localStorage.setItem('3d_config_v7', JSON.stringify(config));
-            cancelEdit();
-            initDropdowns();
-            renderEditList();
+            localStorage.setItem('3d_config_v8', JSON.stringify(config));
+            cancelEdit(); initDropdowns(); renderEditList();
         }
 
         function editProduct(key) {
             editingKey = key;
             document.getElementById('setupTitle').innerText = "Editing: " + key;
             document.getElementById('newProdName').value = key;
-            const vars = Object.entries(config[key]).map(([n, p]) => `${n}:${p}`).join(', ');
-            document.getElementById('newProdVars').value = vars;
-            document.getElementById('saveProdBtn').innerText = "UPDATE PRODUCT";
-            document.getElementById('cancelEditBtn').style.display = "block";
+            const container = document.getElementById('variantInputs');
+            container.innerHTML = '';
+            Object.entries(config[key]).forEach(([n, p]) => {
+                const div = document.createElement('div');
+                div.className = 'variant-row';
+                div.innerHTML = `<input class="std var-name" value="${n}"><input class="std var-price" type="number" value="${p}"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ff453a; font-size:1.2rem;">×</button>`;
+                container.appendChild(div);
+            });
         }
 
         function cancelEdit() {
             editingKey = null;
-            document.getElementById('setupTitle').innerText = "Add Product";
             document.getElementById('newProdName').value = "";
-            document.getElementById('newProdVars').value = "";
-            document.getElementById('saveProdBtn').innerText = "SAVE PRODUCT";
-            document.getElementById('cancelEditBtn').style.display = "none";
-        }
-
-        function deleteConfigItem(key) {
-            if(confirm("Remove " + key + " from menu?")) {
-                delete config[key];
-                localStorage.setItem('3d_config_v7', JSON.stringify(config));
-                initDropdowns();
-                renderEditList();
-            }
-        }
-
-        function renderEditList() {
-            const list = document.getElementById('editList');
-            let html = '<label>Manage Existing</label>';
-            for (let key in config) {
-                html += `
-                <div class="edit-item">
-                    <span>${key}</span>
-                    <div>
-                        <button onclick="editProduct('${key}')" style="background:#007aff; border:none; color:white; padding:5px 10px; border-radius:4px; margin-right:5px;">Edit</button>
-                        <button onclick="deleteConfigItem('${key}')" style="background:#ff453a; border:none; color:white; padding:5px 10px; border-radius:4px;">X</button>
-                    </div>
-                </div>`;
-            }
-            list.innerHTML = html;
+            addVariantRow(true);
+            document.getElementById('setupTitle').innerText = "Add Product";
+            toggleSettings();
         }
 
         function initDropdowns() {
@@ -185,8 +162,7 @@
 
         function loadVariants() {
             const cat = document.getElementById('selCategory').value;
-            const vSel = document.getElementById('selVariant');
-            vSel.innerHTML = Object.keys(config[cat]).map(v => `<option value="${v}">${v}</option>`).join('');
+            document.getElementById('selVariant').innerHTML = Object.keys(config[cat]).map(v => `<option value="${v}">${v}</option>`).join('');
             autoFillPrice();
         }
 
@@ -199,12 +175,7 @@
         }
 
         function setActive(f) { activeField = f; document.querySelectorAll('.box').forEach(b => b.classList.remove('active')); document.getElementById(`box-${f}`).classList.add('active'); buffers[f] = ""; }
-        
-        function press(n) { 
-            if (n === 'C') buffers[activeField] = ""; 
-            else buffers[activeField] += n; 
-            syncMath(activeField); updateDisplays(); 
-        }
+        function press(n) { if (n === 'C') buffers[activeField] = ""; else buffers[activeField] += n; syncMath(activeField); updateDisplays(); }
 
         function syncMath(src) {
             let q = parseFloat(buffers.qty) || 0, u = parseFloat(buffers.unit) || 0, t = parseFloat(buffers.total) || 0;
@@ -219,34 +190,57 @@
         }
 
         function logSale() {
-            const cat = document.getElementById('selCategory').value;
-            const v = document.getElementById('selVariant').value;
-            sales.unshift({ cat: cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total) });
-            localStorage.setItem('3d_sales_v7', JSON.stringify(sales));
+            const cat = document.getElementById('selCategory').value, v = document.getElementById('selVariant').value;
+            sales.unshift({ 
+                cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total), 
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), date: new Date().toLocaleDateString([], {month:'short', day:'numeric'}) 
+            });
+            localStorage.setItem('3d_sales_v8', JSON.stringify(sales));
             render();
         }
 
         function render() {
             let grandTotal = 0, grouped = {};
-            sales.forEach(s => {
+            const logArea = document.getElementById('historyLog');
+            logArea.innerHTML = '<label>Sales Details</label>';
+            
+            sales.forEach((s, idx) => {
                 grandTotal += s.total;
                 if (!grouped[s.cat]) grouped[s.cat] = { total: 0, subs: {} };
                 grouped[s.cat].total += s.total;
                 grouped[s.cat].subs[s.var] = (grouped[s.cat].subs[s.var] || 0) + s.total;
+
+                logArea.innerHTML += `
+                <div class="history-card" onclick="deleteSale(${idx})">
+                    <div class="hist-top">
+                        <strong>${s.qty}x ${s.var}</strong>
+                        <span style="color:var(--accent); font-weight:bold;">$${s.total.toFixed(2)}</span>
+                    </div>
+                    <div class="hist-date">${s.cat} • $${s.unit.toFixed(2)}/ea • ${s.date} ${s.time}</div>
+                </div>`;
             });
 
-            let html = '<label style="margin-top:20px">Sales Summary</label>';
+            let html = '<label style="margin-top:20px">Summary</label>';
             for (let cat in grouped) {
                 html += `<div class="group-header"><span>${cat}</span><span>$${grouped[cat].total.toFixed(2)}</span></div>`;
-                for (let sub in grouped[cat].subs) {
-                    html += `<div class="sub-row"><span>└ ${sub}</span><span>$${grouped[cat].subs[sub].toFixed(2)}</span></div>`;
-                }
+                for (let sub in grouped[cat].subs) html += `<div class="sub-row"><span>└ ${sub}</span><span>$${grouped[cat].subs[sub].toFixed(2)}</span></div>`;
             }
             document.getElementById('summaryArea').innerHTML = html;
             document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
         }
 
-        function clearAll() { if(confirm("Wipe everything? This deletes ALL sales and ALL custom products.")) { localStorage.clear(); location.reload(); } }
+        function renderEditList() {
+            const area = document.getElementById('editList');
+            area.innerHTML = '<label>Manage Products</label>';
+            Object.keys(config).forEach(k => {
+                area.innerHTML += `<div class="edit-item"><span>${k}</span><div><button onclick="editProduct('${k}')" style="background:#007aff; border:none; color:white; padding:6px 12px; border-radius:6px; margin-right:5px;">Edit</button><button onclick="deleteConfigItem('${k}')" style="background:#ff453a; border:none; color:white; padding:6px 12px; border-radius:6px;">×</button></div></div>`;
+            });
+        }
+
+        function deleteConfigItem(k) { if(confirm("Delete product category?")) { delete config[k]; localStorage.setItem('3d_config_v8', JSON.stringify(config)); renderEditList(); initDropdowns(); } }
+        function deleteSale(idx) { if(confirm("Remove this sale?")) { sales.splice(idx,1); localStorage.setItem('3d_sales_v8', JSON.stringify(sales)); render(); } }
+        function clearAll() { if(confirm("FULL RESET? All sales and products will be lost.")) { localStorage.clear(); location.reload(); } }
+        
         window.onload = () => { initDropdowns(); render(); setActive('total'); };
     </script>
 </body>
