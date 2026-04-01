@@ -17,9 +17,8 @@
         
         select, input.std { width: 100%; background: #2c2c2e; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
 
-        /* Tri-Input Logic */
         .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .box { background: #2c2c2e; padding: 10px; border-radius: 10px; border: 1px solid var(--border); position: relative; text-align: center; }
+        .box { background: #2c2c2e; padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
         .box.active { border-color: var(--accent); background: #263529; }
         .box-label { font-size: 0.6rem; color: var(--sub); display: block; margin-bottom: 2px; }
         .box-val { font-size: 1.1rem; font-weight: bold; color: white; }
@@ -30,13 +29,13 @@
 
         .log-btn { background: var(--accent); color: black; font-weight: bold; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; }
 
-        /* Summary & Grouping */
         .summary-box { background: #1c1c1e; border-radius: 12px; padding: 12px; margin-top: 20px; }
         .group-header { background: #2c2c2e; padding: 8px 12px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: var(--accent); font-size: 0.9rem;}
         .sub-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 0.85rem; border-bottom: 1px solid #222; color: #ccc; }
         
         .settings-btn { background: #2c2c2e; color: var(--sub); border: none; padding: 10px; border-radius: 8px; width: 100%; margin-top: 20px; font-size: 0.8rem; }
         .hidden { display: none; }
+        small { color: #666; font-size: 0.7rem; display: block; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -56,7 +55,7 @@
         </div>
         <div class="form-group" id="variantGroup">
             <label>Variety / Color</label>
-            <select id="selVariant" onchange="autoFillDefault()"></select>
+            <select id="selVariant" onchange="autoFillPrice()"></select>
         </div>
 
         <div class="input-grid">
@@ -73,26 +72,28 @@
         </div>
 
         <button class="log-btn" onclick="logSale()">LOG SALE</button>
-        
         <div id="summaryArea"></div>
     </div>
 
     <div id="settingsUI" class="hidden">
         <h3>Product Setup</h3>
-        <div class="form-group"><label>Product Name</label><input class="std" id="newProdName" placeholder="e.g. Vase"></div>
-        <div class="form-group"><label>Default Price</label><input class="std" type="number" id="newProdPrice" value="10"></div>
-        <div class="form-group"><label>Varieties (Comma separated)</label><input class="std" id="newProdVars" placeholder="Small, Large, Red"></div>
+        <div class="form-group"><label>Product Name</label><input class="std" id="newProdName" placeholder="e.g. Plant Pot"></div>
+        <div class="form-group">
+            <label>Varieties & Prices</label>
+            <input class="std" id="newProdVars" placeholder="Gray:12.5, Gold:15">
+            <small>Format: Name:Price, Name:Price</small>
+        </div>
         <button class="log-btn" onclick="addNewProduct()">ADD PRODUCT</button>
         <button class="settings-btn" onclick="toggleSettings()">BACK TO SALES</button>
         <button class="settings-btn" style="color: #ff453a;" onclick="clearAll()">RESET ALL DATA</button>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3d_config')) || {
-            "Plant Pot": { price: 15, vars: ["Gray Plant", "Gray Flower", "Gold Plant", "Gold Flowers"] },
-            "Cookie Cutter": { price: 4, vars: ["Standard"] }
+        let config = JSON.parse(localStorage.getItem('3d_config_v6')) || {
+            "Plant Pot": { "Gray Plant": 12.5, "Gray Flower": 11.25, "Gold Plant": 12.5, "Gold Flowers": 15 },
+            "Cookie Cutter": { "Standard": 4 }
         };
-        let sales = JSON.parse(localStorage.getItem('3d_sales_v5')) || [];
+        let sales = JSON.parse(localStorage.getItem('3d_sales_v6')) || [];
         let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" };
 
         function toggleSettings() {
@@ -102,11 +103,17 @@
 
         function addNewProduct() {
             const name = document.getElementById('newProdName').value;
-            const price = document.getElementById('newProdPrice').value;
-            const vars = document.getElementById('newProdVars').value.split(',').map(v => v.trim());
-            if(!name) return;
-            config[name] = { price: parseFloat(price), vars: vars.length > 0 && vars[0] !== "" ? vars : ["Standard"] };
-            localStorage.setItem('3d_config', JSON.stringify(config));
+            const varString = document.getElementById('newProdVars').value;
+            if(!name || !varString) return;
+
+            let varMap = {};
+            varString.split(',').forEach(item => {
+                let [vName, vPrice] = item.split(':');
+                varMap[vName.trim()] = parseFloat(vPrice) || 0;
+            });
+
+            config[name] = varMap;
+            localStorage.setItem('3d_config_v6', JSON.stringify(config));
             initDropdowns(); toggleSettings();
         }
 
@@ -118,17 +125,16 @@
 
         function loadVariants() {
             const cat = document.getElementById('selCategory').value;
-            const vGroup = document.getElementById('variantGroup');
             const vSel = document.getElementById('selVariant');
-            vSel.innerHTML = config[cat].vars.map(v => `<option value="${v}">${v}</option>`).join('');
-            vGroup.style.display = config[cat].vars[0] === "Standard" && config[cat].vars.length === 1 ? 'none' : 'block';
-            autoFillDefault();
+            vSel.innerHTML = Object.keys(config[cat]).map(v => `<option value="${v}">${v}</option>`).join('');
+            autoFillPrice();
         }
 
-        function autoFillDefault() {
+        function autoFillPrice() {
             const cat = document.getElementById('selCategory').value;
+            const variant = document.getElementById('selVariant').value;
             buffers.qty = "1";
-            buffers.unit = config[cat].price.toString();
+            buffers.unit = config[cat][variant].toString();
             syncMath('unit'); updateDisplays();
         }
 
@@ -155,8 +161,8 @@
         function logSale() {
             const cat = document.getElementById('selCategory').value;
             const v = document.getElementById('selVariant').value;
-            sales.unshift({ cat: cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total), date: new Date().toLocaleString([], {month:'short', day:'numeric'}) });
-            localStorage.setItem('3d_sales_v5', JSON.stringify(sales));
+            sales.unshift({ cat: cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total) });
+            localStorage.setItem('3d_sales_v6', JSON.stringify(sales));
             render();
         }
 
