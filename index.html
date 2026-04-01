@@ -4,137 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Sales Pro</title>
-    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; overflow-x: hidden; }
         
-        /* Dashboard */
-        .dashboard { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 4px solid var(--accent); }
-        .total-label { color: var(--sub); font-size: 0.8rem; text-transform: uppercase; }
-        .total-val { font-size: 2rem; font-weight: 800; }
+        .dashboard { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); }
+        .total-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
 
-        /* Form */
         .form-group { margin-bottom: 15px; }
-        label { display: block; color: var(--sub); font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px; }
-        select, input { 
-            width: 100%; background: #2c2c2e; border: none; color: white; 
-            padding: 15px; border-radius: 10px; font-size: 1rem; box-sizing: border-box;
-        }
+        label { display: block; color: var(--sub); font-size: 0.75rem; margin-bottom: 5px; text-transform: uppercase; }
         
-        .flex-row { display: flex; gap: 10px; }
-        .flex-row > div { flex: 1; }
+        select { width: 100%; background: #2c2c2e; border: none; color: white; padding: 12px; border-radius: 10px; font-size: 1rem; }
+
+        /* Rolling Picker */
+        .picker-frame {
+            height: 120px; background: #2c2c2e; border-radius: 12px; overflow-y: scroll;
+            scroll-snap-type: y mandatory; position: relative; border: 1px solid #444;
+        }
+        .picker-frame::-webkit-scrollbar { display: none; }
+        .picker-item {
+            height: 40px; line-height: 40px; text-align: center; font-size: 1.2rem;
+            scroll-snap-align: center; color: #666; transition: 0.2s;
+        }
+        .picker-item.active { color: var(--accent); font-weight: bold; font-size: 1.5rem; }
+        .picker-highlight {
+            position: absolute; top: 40px; left: 0; right: 0; height: 40px;
+            border-top: 1px solid #444; border-bottom: 1px solid #444; pointer-events: none;
+        }
+
+        /* Numpad & Price Display */
+        .price-display {
+            background: #2c2c2e; padding: 15px; border-radius: 10px; text-align: right;
+            font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; border: 1px solid #444;
+        }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .num-btn {
+            background: #3a3a3c; border: none; color: white; padding: 15px;
+            border-radius: 8px; font-size: 1.2rem; font-weight: 600;
+        }
+        .num-btn:active { background: #505054; }
 
         .log-btn { 
             background: var(--accent); color: black; font-weight: bold; width: 100%; 
-            padding: 18px; border-radius: 12px; border: none; font-size: 1.1rem; margin-top: 10px;
+            padding: 18px; border-radius: 12px; border: none; font-size: 1.1rem; margin-top: 15px;
         }
 
-        /* History */
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
-        .history-list { margin-top: 10px; }
-        .sale-card { 
-            background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 8px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sale-info { font-size: 0.9rem; }
+        /* List UI */
+        .sale-card { background: var(--card); padding: 12px; border-radius: 10px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; }
         .sale-date { color: var(--sub); font-size: 0.7rem; display: block; }
-        .sale-price { font-weight: bold; color: var(--accent); }
     </style>
 </head>
 <body>
 
     <div class="dashboard">
-        <div class="total-label">Grand Total Sold</div>
+        <div style="color:var(--sub); font-size:0.7rem;">TOTAL SALES</div>
         <div class="total-val">$<span id="grandTotal">0.00</span></div>
     </div>
 
     <div class="form-group">
-        <label>Product Category</label>
-        <select id="mainCategory" onchange="updateVariations()">
-            <option value="Plant Pot">Plant Pot</option>
+        <label>Product & Variety</label>
+        <select id="mainItem" onchange="resetPrice()">
+            <optgroup label="Plant Pots">
+                <option value="Gray Plant">Gray Plant</option>
+                <option value="Gray Flower">Gray Flower</option>
+                <option value="Gold Plant">Gold Plant</option>
+                <option value="Gold Flowers">Gold Flowers</option>
+            </optgroup>
             <option value="Cookie Cutter">Cookie Cutter</option>
         </select>
     </div>
 
-    <div class="form-group" id="varGroup">
-        <label>Variety / Color</label>
-        <select id="subCategory">
-            <option>Gray Plant</option>
-            <option>Gray Flower</option>
-            <option>Gold Plant</option>
-            <option>Gold Flowers</option>
-        </select>
-    </div>
-
-    <div class="flex-row">
-        <div class="form-group">
-            <label id="qtyLabel">Quantity</label>
-            <input type="number" id="qty" value="1" oninput="calculateTotal()">
+    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+        <div style="flex: 1;">
+            <label>Count (Roll)</label>
+            <div class="picker-frame" id="qtyPicker" onscroll="updatePicker()">
+                <div style="height: 40px;"></div> <div id="pickerItems"></div>
+                <div style="height: 40px;"></div> <div class="picker-highlight"></div>
+            </div>
         </div>
-        <div class="form-group">
-            <label id="priceLabel">Total Price ($)</label>
-            <input type="number" step="0.01" id="price" placeholder="0.00">
+        <div style="flex: 1.5;">
+            <label>Price</label>
+            <div class="price-display" id="priceOut">$0.00</div>
+            <div class="numpad">
+                <button class="num-btn" onclick="pressNum('1')">1</button>
+                <button class="num-btn" onclick="pressNum('2')">2</button>
+                <button class="num-btn" onclick="pressNum('3')">3</button>
+                <button class="num-btn" onclick="pressNum('4')">4</button>
+                <button class="num-btn" onclick="pressNum('5')">5</button>
+                <button class="num-btn" onclick="pressNum('6')">6</button>
+                <button class="num-btn" onclick="pressNum('7')">7</button>
+                <button class="num-btn" onclick="pressNum('8')">8</button>
+                <button class="num-btn" onclick="pressNum('9')">9</button>
+                <button class="num-btn" onclick="pressNum('.')">.</button>
+                <button class="num-btn" onclick="pressNum('0')">0</button>
+                <button class="num-btn" onclick="pressNum('C')" style="color:#ff453a">C</button>
+            </div>
         </div>
     </div>
 
     <button class="log-btn" onclick="logSale()">LOG SALE</button>
 
-    <div class="history-header">
-        <span class="total-label">Recent Sales</span>
-        <button onclick="exportData()" style="background:none; border:none; color:var(--accent); font-size:0.8rem;">Export JSON</button>
-    </div>
-    <div class="history-list" id="historyLog"></div>
+    <div id="historyLog" style="margin-top: 20px; padding-bottom: 50px;"></div>
 
     <script>
-        let sales = JSON.parse(localStorage.getItem('printSales_v2')) || [];
-        const config = {
-            "Plant Pot": { hasVar: true, defaultPrice: 15, varieties: ["Gray Plant", "Gray Flower", "Gold Plant", "Gold Flowers"] },
-            "Cookie Cutter": { hasVar: false, defaultPrice: 4, varieties: [] }
-        };
+        let sales = JSON.parse(localStorage.getItem('printSales_v3')) || [];
+        let priceBuffer = "";
+        let currentQty = 1;
 
-        function updateVariations() {
-            const cat = document.getElementById('mainCategory').value;
-            const varGroup = document.getElementById('varGroup');
-            const subSelect = document.getElementById('subCategory');
-            const priceInput = document.getElementById('price');
-            const qtyInput = document.getElementById('qty');
+        // Initialize Picker
+        const picker = document.getElementById('pickerItems');
+        for(let i=1; i<=50; i++) {
+            picker.innerHTML += `<div class="picker-item" data-val="${i}">${i}</div>`;
+        }
 
-            if (config[cat].hasVar) {
-                varGroup.style.display = 'block';
-                subSelect.innerHTML = config[cat].varieties.map(v => `<option>${v}</option>`).join('');
-                priceInput.value = config[cat].defaultPrice;
-            } else {
-                varGroup.style.display = 'none';
-                priceInput.value = config[cat].defaultPrice * qtyInput.value;
+        function updatePicker() {
+            const frame = document.getElementById('qtyPicker');
+            const items = document.querySelectorAll('.picker-item');
+            const index = Math.round(frame.scrollTop / 40);
+            items.forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+            currentQty = index + 1;
+            
+            // Auto-update price for Cookie Cutter
+            if (document.getElementById('mainItem').value === "Cookie Cutter") {
+                priceBuffer = (currentQty * 4).toString();
+                updatePriceDisplay();
             }
         }
 
-        function calculateTotal() {
-            const cat = document.getElementById('mainCategory').value;
-            if (cat === "Cookie Cutter") {
-                const qty = document.getElementById('qty').value;
-                document.getElementById('price').value = (qty * config[cat].defaultPrice).toFixed(2);
-            }
+        function pressNum(n) {
+            if (n === 'C') priceBuffer = "";
+            else if (n === '.' && priceBuffer.includes('.')) return;
+            else priceBuffer += n;
+            updatePriceDisplay();
+        }
+
+        function updatePriceDisplay() {
+            const val = parseFloat(priceBuffer) || 0;
+            document.getElementById('priceOut').innerText = "$" + val.toFixed(2);
+        }
+
+        function resetPrice() {
+            const item = document.getElementById('mainItem').value;
+            priceBuffer = (item === "Cookie Cutter") ? (currentQty * 4).toString() : "15";
+            updatePriceDisplay();
         }
 
         function logSale() {
-            const cat = document.getElementById('mainCategory').value;
-            const sub = config[cat].hasVar ? document.getElementById('subCategory').value : "";
-            const qty = document.getElementById('qty').value;
-            const total = document.getElementById('price').value;
-
+            const item = document.getElementById('mainItem').value;
+            const finalPrice = parseFloat(priceBuffer) || (item === "Cookie Cutter" ? currentQty * 4 : 15);
+            
             const entry = {
                 id: Date.now(),
-                name: sub || cat,
-                qty: qty,
-                total: parseFloat(total),
-                date: new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                item: item,
+                qty: currentQty,
+                total: finalPrice,
+                date: new Date().toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})
             };
 
             sales.unshift(entry);
-            localStorage.setItem('printSales_v2', JSON.stringify(sales));
+            localStorage.setItem('printSales_v3', JSON.stringify(sales));
+            priceBuffer = "";
             render();
         }
 
@@ -142,30 +174,20 @@
             const log = document.getElementById('historyLog');
             let grandTotal = 0;
             log.innerHTML = '';
-
             sales.forEach((s, i) => {
                 grandTotal += s.total;
                 log.innerHTML += `
-                    <div class="sale-card" onclick="deleteItem(${i})">
-                        <div class="sale-info">
-                            <strong>${s.qty}x ${s.name}</strong>
-                            <span class="sale-date">${s.date}</span>
-                        </div>
-                        <div class="sale-price">$${s.total.toFixed(2)}</div>
-                    </div>
-                `;
+                    <div class="sale-card" onclick="deleteSale(${i})">
+                        <div><strong>${s.qty}x ${s.item}</strong><span class="sale-date">${s.date}</span></div>
+                        <div style="color:var(--accent); font-weight:bold;">$${s.total.toFixed(2)}</div>
+                    </div>`;
             });
             document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
         }
 
-        function deleteItem(i) { if(confirm("Delete sale?")) { sales.splice(i,1); localStorage.setItem('printSales_v2', JSON.stringify(sales)); render(); } }
-        
-        function exportData() {
-            window.open("data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sales)));
-        }
+        function deleteSale(i) { if(confirm("Delete?")) { sales.splice(i,1); localStorage.setItem('printSales_v3', JSON.stringify(sales)); render(); } }
 
-        updateVariations();
-        render();
+        window.onload = () => { render(); resetPrice(); updatePicker(); };
     </script>
 </body>
 </html>
