@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Sales Pro v8</title>
+    <title>3D Sales Pro v9</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; --border: #333; }
@@ -14,7 +14,7 @@
         .total-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
         .form-group { margin-bottom: 12px; }
         label { display: block; color: var(--sub); font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; font-weight: bold; }
-        select, input.std { width: 100%; background: #2c2c2e; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
+        select, input.std { width: 100%; background: #2c2c2e; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; appearance: none; }
 
         /* Input Grid & Numpad */
         .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -25,6 +25,10 @@
         .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
         .num-btn { background: #2c2c2e; border: none; color: white; padding: 15px; border-radius: 8px; font-size: 1.2rem; }
 
+        /* Controls: Filter & Sort */
+        .controls-bar { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin: 20px 0 10px 0; }
+        .ctrl-select { background: #1c1c1e; color: var(--sub); border: 1px solid #444; padding: 8px; border-radius: 8px; font-size: 0.75rem; }
+
         /* Summary & History List */
         .log-btn { background: var(--accent); color: black; font-weight: bold; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; }
         .summary-box { background: #1c1c1e; border-radius: 12px; padding: 12px; margin-top: 20px; }
@@ -34,7 +38,7 @@
         .hist-top { display: flex; justify-content: space-between; align-items: flex-start; }
         .hist-date { font-size: 0.65rem; color: var(--sub); }
 
-        /* Setup/Edit Styles */
+        /* Setup UI */
         .variant-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 8px; margin-bottom: 8px; }
         .edit-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2e; padding: 10px; border-radius: 10px; margin-top: 8px; }
         .hidden { display: none; }
@@ -74,8 +78,22 @@
         </div>
 
         <button class="log-btn" onclick="logSale()">LOG SALE</button>
+        
         <div id="summaryArea"></div>
-        <div id="historyLog" style="margin-top: 30px;"><label>Sales Details</label></div>
+
+        <div class="controls-bar">
+            <select id="filterCat" class="ctrl-select" onchange="render()">
+                <option value="all">All Categories</option>
+            </select>
+            <select id="sortMode" class="ctrl-select" onchange="render()">
+                <option value="newest">Date: Newest</option>
+                <option value="oldest">Date: Oldest</option>
+                <option value="high">Price: High</option>
+                <option value="low">Price: Low</option>
+            </select>
+        </div>
+
+        <div id="historyLog"><label>Sales Details</label></div>
     </div>
 
     <div id="settingsUI" class="hidden">
@@ -89,15 +107,14 @@
         <button onclick="cancelEdit()" style="width:100%; color:var(--sub); background:none; border:none; padding:10px; margin-top:10px;">Cancel / Back</button>
 
         <div id="editList" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;"></div>
-        <button class="log-btn" style="background:#ff453a; color:white; margin-top:50px;" onclick="clearAll()">RESET ENTIRE APP</button>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3d_config_v8')) || {
+        let config = JSON.parse(localStorage.getItem('3d_config_v9')) || {
             "Plant Pot": { "Gray Plant": 12.5, "Gray Flower": 11.25, "Gold Plant": 12.5, "Gold Flowers": 15 },
             "Cookie Cutter": { "Standard": 4 }
         };
-        let sales = JSON.parse(localStorage.getItem('3d_sales_v8')) || [];
+        let sales = JSON.parse(localStorage.getItem('3d_sales_v9')) || [];
         let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" }, editingKey = null;
 
         function toggleSettings() {
@@ -128,7 +145,7 @@
             });
             if(editingKey && editingKey !== name) delete config[editingKey];
             config[name] = varMap;
-            localStorage.setItem('3d_config_v8', JSON.stringify(config));
+            localStorage.setItem('3d_config_v9', JSON.stringify(config));
             cancelEdit(); initDropdowns(); renderEditList();
         }
 
@@ -156,7 +173,10 @@
 
         function initDropdowns() {
             const sel = document.getElementById('selCategory');
-            sel.innerHTML = Object.keys(config).map(k => `<option value="${k}">${k}</option>`).join('');
+            const filter = document.getElementById('filterCat');
+            const options = Object.keys(config).map(k => `<option value="${k}">${k}</option>`).join('');
+            sel.innerHTML = options;
+            filter.innerHTML = `<option value="all">All Categories</option>` + options;
             loadVariants();
         }
 
@@ -193,23 +213,41 @@
             const cat = document.getElementById('selCategory').value, v = document.getElementById('selVariant').value;
             sales.unshift({ 
                 cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total), 
-                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), date: new Date().toLocaleDateString([], {month:'short', day:'numeric'}) 
+                timestamp: Date.now(),
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), 
+                date: new Date().toLocaleDateString([], {month:'short', day:'numeric'}) 
             });
-            localStorage.setItem('3d_sales_v8', JSON.stringify(sales));
+            localStorage.setItem('3d_sales_v9', JSON.stringify(sales));
             render();
         }
 
         function render() {
+            const filterVal = document.getElementById('filterCat').value;
+            const sortVal = document.getElementById('sortMode').value;
             let grandTotal = 0, grouped = {};
-            const logArea = document.getElementById('historyLog');
-            logArea.innerHTML = '<label>Sales Details</label>';
             
-            sales.forEach((s, idx) => {
+            // Filter and Sort Logic
+            let displaySales = [...sales];
+            if(filterVal !== 'all') displaySales = displaySales.filter(s => s.cat === filterVal);
+            
+            displaySales.sort((a, b) => {
+                if(sortVal === 'newest') return b.timestamp - a.timestamp;
+                if(sortVal === 'oldest') return a.timestamp - b.timestamp;
+                if(sortVal === 'high') return b.total - a.total;
+                if(sortVal === 'low') return a.total - b.total;
+            });
+
+            // Summary Calculation
+            sales.forEach(s => {
                 grandTotal += s.total;
                 if (!grouped[s.cat]) grouped[s.cat] = { total: 0, subs: {} };
                 grouped[s.cat].total += s.total;
                 grouped[s.cat].subs[s.var] = (grouped[s.cat].subs[s.var] || 0) + s.total;
+            });
 
+            const logArea = document.getElementById('historyLog');
+            logArea.innerHTML = '<label>Sales Details</label>';
+            displaySales.forEach((s, idx) => {
                 logArea.innerHTML += `
                 <div class="history-card" onclick="deleteSale(${idx})">
                     <div class="hist-top">
@@ -237,9 +275,9 @@
             });
         }
 
-        function deleteConfigItem(k) { if(confirm("Delete product category?")) { delete config[k]; localStorage.setItem('3d_config_v8', JSON.stringify(config)); renderEditList(); initDropdowns(); } }
-        function deleteSale(idx) { if(confirm("Remove this sale?")) { sales.splice(idx,1); localStorage.setItem('3d_sales_v8', JSON.stringify(sales)); render(); } }
-        function clearAll() { if(confirm("FULL RESET? All sales and products will be lost.")) { localStorage.clear(); location.reload(); } }
+        function deleteConfigItem(k) { if(confirm("Delete category?")) { delete config[k]; localStorage.setItem('3d_config_v9', JSON.stringify(config)); renderEditList(); initDropdowns(); } }
+        function deleteSale(idx) { if(confirm("Remove this sale?")) { sales.splice(idx,1); localStorage.setItem('3d_sales_v9', JSON.stringify(sales)); render(); } }
+        function clearAll() { if(confirm("FULL RESET?")) { localStorage.clear(); location.reload(); } }
         
         window.onload = () => { initDropdowns(); render(); setActive('total'); };
     </script>
