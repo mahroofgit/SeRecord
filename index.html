@@ -3,204 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Sales Pro v9</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>3D Sales Pro v20</title>
     <style>
-        :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; --border: #333; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; padding-bottom: 50px; }
+        :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; --border: #333; --danger: #ff453a; --edit: #007aff; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; transition: padding-bottom 0.3s ease; }
         
-        /* Dashboard & Layout */
-        .dashboard { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center;}
-        .total-val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; color: var(--sub); font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; font-weight: bold; }
-        select, input.std { width: 100%; background: #2c2c2e; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; font-size: 1rem; box-sizing: border-box; appearance: none; }
+        /* Dashboard Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .grand-total-label { color: var(--sub); font-size: 0.7rem; text-transform: uppercase; }
+        .grand-total-val { font-size: 2rem; font-weight: 800; color: var(--accent); }
 
-        /* Input Grid & Numpad */
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .box { background: #2c2c2e; padding: 10px; border-radius: 10px; border: 1px solid var(--border); text-align: center; }
-        .box.active { border-color: var(--accent); background: #263529; }
-        .box-label { font-size: 0.6rem; color: var(--sub); display: block; margin-bottom: 2px; }
-        .box-val { font-size: 1.1rem; font-weight: bold; color: white; }
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 15px; }
-        .num-btn { background: #2c2c2e; border: none; color: white; padding: 15px; border-radius: 8px; font-size: 1.2rem; }
+        /* Input Section */
+        .tracker-inputs { margin-bottom: 20px; }
+        .std-select, .std-input { width: 100%; background: var(--card); border: 1px solid var(--border); color: white; padding: 15px; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; -webkit-appearance: none; }
+        
+        .input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .input-box { background: var(--card); padding: 12px 5px; border-radius: 12px; text-align: center; border: 2px solid transparent; transition: 0.2s; cursor: pointer; }
+        .input-box.active { border-color: var(--accent); background: #263529; transform: scale(1.03); }
+        .box-label { font-size: 0.65rem; color: var(--sub); display: block; margin-bottom: 4px; text-transform: uppercase; }
+        .box-val { font-size: 1.2rem; font-weight: bold; }
 
-        /* Controls: Filter & Sort */
-        .controls-bar { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin: 20px 0 10px 0; }
-        .ctrl-select { background: #1c1c1e; color: var(--sub); border: 1px solid #444; padding: 8px; border-radius: 8px; font-size: 0.75rem; }
+        .log-btn { background: var(--accent); color: #000; width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; }
 
-        /* Summary & History List */
-        .log-btn { background: var(--accent); color: black; font-weight: bold; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; }
-        .summary-box { background: #1c1c1e; border-radius: 12px; padding: 12px; margin-top: 20px; }
-        .group-header { background: #2c2c2e; padding: 8px 12px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: bold; color: var(--accent); font-size: 0.9rem;}
-        .sub-row { display: flex; justify-content: space-between; padding: 8px 12px; font-size: 0.85rem; border-bottom: 1px solid #222; color: #ccc; }
-        .history-card { background: var(--card); padding: 12px; border-radius: 10px; margin-top: 8px; border: 1px solid #333; }
-        .hist-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        .hist-date { font-size: 0.65rem; color: var(--sub); }
+        /* Summary & History */
+        .list-container { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid var(--border); margin-top: 15px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #2c2c2e; }
+        .summary-row.cat-row { background: #2c2c2e; font-weight: bold; }
+        .net-badge { background: #444; color: var(--text); padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; margin-left: 8px; }
 
-        /* Setup UI */
-        .variant-row { display: grid; grid-template-columns: 2fr 1fr 40px; gap: 8px; margin-bottom: 8px; }
-        .edit-item { display: flex; justify-content: space-between; align-items: center; background: #2c2c2e; padding: 10px; border-radius: 10px; margin-top: 8px; }
-        .hidden { display: none; }
+        /* Swipe to Action */
+        .swipe-item { position: relative; background: var(--bg); overflow: hidden; border-bottom: 1px solid #2c2c2e; }
+        .swipe-content { position: relative; background: var(--card); padding: 15px; z-index: 2; transition: transform 0.3s ease; display: flex; justify-content: space-between; align-items: center; }
+        .swipe-actions { position: absolute; top: 0; right: 0; bottom: 0; width: 140px; display: flex; z-index: 1; }
+        .action-btn { flex: 1; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+
+        /* Numpad Drawer */
+        #numpad-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: #1c1c1e; padding: 15px 15px 35px; border-radius: 20px 20px 0 0; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -10px 40px rgba(0,0,0,1); }
+        #numpad-drawer.open { transform: translateY(0); }
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .num-btn { background: #3a3a3c; border: none; color: white; padding: 20px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; }
+        .num-btn:active { background: #555; }
+
+        .hidden { display: none !important; }
+        .spacer { height: 100px; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <div>
-            <div style="color:var(--sub); font-size:0.7rem;">GRAND TOTAL</div>
-            <div class="total-val">$<span id="grandTotal">0.00</span></div>
+    <div id="app-content">
+        <div class="header">
+            <div>
+                <div class="grand-total-label">Net Sales Total</div>
+                <div class="grand-total-val">$<span id="grandTotal">0.00</span></div>
+            </div>
+            <button class="num-btn" style="padding: 8px 15px; font-size: 0.8rem;" onclick="toggleUI('setup')">Setup</button>
         </div>
-        <button onclick="toggleSettings()" style="background:none; border:1px solid #444; color:#666; border-radius:5px; padding:8px 12px;">Setup</button>
+
+        <div id="trackerUI">
+            <div class="tracker-inputs" id="inputArea">
+                <select class="std-select" id="selCategory" onchange="loadVariants()"></select>
+                <select class="std-select" id="selVariant" onchange="autoFill()"></select>
+
+                <div class="input-group">
+                    <div class="input-box" id="box-qty" onclick="openNumpad('qty')"><span class="box-label">Count</span><div class="box-val" id="disp-qty">1</div></div>
+                    <div class="input-box" id="box-unit" onclick="openNumpad('unit')"><span class="box-label">Unit $</span><div class="box-val" id="disp-unit">0.00</div></div>
+                    <div class="input-box" id="box-total" onclick="openNumpad('total')"><span class="box-label">Total $</span><div class="box-val" id="disp-total">0.00</div></div>
+                </div>
+                <button class="log-btn" id="mainLogBtn" onclick="logSale()">LOG SALE</button>
+            </div>
+
+            <div id="summaryArea" class="list-container"></div>
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <select class="std-select" id="filterCat" onchange="render()" style="flex:1; padding:8px; font-size:0.7rem;"></select>
+                <select class="std-select" id="sortMode" onchange="render()" style="flex:1; padding:8px; font-size:0.7rem;">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="high">Price: High</option>
+                    <option value="low">Price: Low</option>
+                </select>
+            </div>
+            <div id="historyLog" class="list-container"></div>
+            <div class="spacer"></div>
+        </div>
+
+        <div id="setupUI" class="hidden">
+            <h3>Product Configuration</h3>
+            <input class="std-input" id="newCat" placeholder="Category Name">
+            <div id="variantList"></div>
+            <button class="num-btn" style="width:100%; font-size:0.9rem; margin-bottom:10px;" onclick="addVarRow()">+ Add Variety Row</button>
+            <button class="log-btn" onclick="saveConfig()">SAVE PRODUCT</button>
+            
+            <div id="manageList" class="list-container"></div>
+            
+            <div style="background:var(--card); padding:15px; border-radius:15px; margin-top:20px; border:1px solid var(--border);">
+                <button class="num-btn" style="width:100%; font-size:0.8rem; margin-bottom:10px;" onclick="exportJSON()">Export JSON Backup</button>
+                <button class="num-btn" style="width:100%; font-size:0.8rem;" onclick="importJSON()">Import JSON Backup</button>
+                <button onclick="resetAll()" style="width:100%; margin-top:15px; background:none; border:none; color:var(--danger); font-size:0.7rem;">CLEAR ALL DATA</button>
+            </div>
+            <button class="log-btn" style="background:#444; color:white; margin-top:20px;" onclick="toggleUI('tracker')">RETURN TO TRACKER</button>
+        </div>
     </div>
 
-    <div id="mainUI">
-        <div class="form-group">
-            <label>Category</label>
-            <select id="selCategory" onchange="loadVariants()"></select>
-        </div>
-        <div class="form-group" id="variantGroup">
-            <label>Variety</label>
-            <select id="selVariant" onchange="autoFillPrice()"></select>
-        </div>
-
-        <div class="input-grid">
-            <div class="box" id="box-qty" onclick="setActive('qty')"><span class="box-label">COUNT</span><div class="box-val" id="disp-qty">1</div></div>
-            <div class="box" id="box-unit" onclick="setActive('unit')"><span class="box-label">UNIT $</span><div class="box-val" id="disp-unit">0.00</div></div>
-            <div class="box" id="box-total" onclick="setActive('total')"><span class="box-label">TOTAL $</span><div class="box-val" id="disp-total">0.00</div></div>
-        </div>
-
-        <div class="numpad">
+    <div id="numpad-drawer">
+        <div class="numpad-grid">
             <button class="num-btn" onclick="press('1')">1</button><button class="num-btn" onclick="press('2')">2</button><button class="num-btn" onclick="press('3')">3</button>
             <button class="num-btn" onclick="press('4')">4</button><button class="num-btn" onclick="press('5')">5</button><button class="num-btn" onclick="press('6')">6</button>
             <button class="num-btn" onclick="press('7')">7</button><button class="num-btn" onclick="press('8')">8</button><button class="num-btn" onclick="press('9')">9</button>
-            <button class="num-btn" onclick="press('.')">.</button><button class="num-btn" onclick="press('0')">0</button><button class="num-btn" onclick="press('C')" style="color:#ff453a">C</button>
+            <button class="num-btn" onclick="press('.')">.</button><button class="num-btn" onclick="press('0')">0</button>
+            <button class="num-btn" onclick="press('C')" style="color:var(--danger)">C</button>
+            <button class="num-btn" onclick="closeNumpad()" style="grid-column: span 3; background:var(--accent); color:black; margin-top:10px;">DONE</button>
         </div>
-
-        <button class="log-btn" onclick="logSale()">LOG SALE</button>
-        
-        <div id="summaryArea"></div>
-
-        <div class="controls-bar">
-            <select id="filterCat" class="ctrl-select" onchange="render()">
-                <option value="all">All Categories</option>
-            </select>
-            <select id="sortMode" class="ctrl-select" onchange="render()">
-                <option value="newest">Date: Newest</option>
-                <option value="oldest">Date: Oldest</option>
-                <option value="high">Price: High</option>
-                <option value="low">Price: Low</option>
-            </select>
-        </div>
-
-        <div id="historyLog"><label>Sales Details</label></div>
-    </div>
-
-    <div id="settingsUI" class="hidden">
-        <h3 id="setupTitle">Add Product</h3>
-        <div class="form-group"><label>Category Name</label><input class="std" id="newProdName" placeholder="e.g. Plant Pot"></div>
-        <label>Varieties & Default Prices</label>
-        <div id="variantInputs"></div>
-        <button onclick="addVariantRow()" style="background:#2c2c2e; border:1px dashed #555; color:var(--sub); width:100%; padding:10px; border-radius:8px; margin-bottom:15px;">+ Add Another Variety</button>
-        
-        <button class="log-btn" onclick="saveProduct()">SAVE PRODUCT</button>
-        <button onclick="cancelEdit()" style="width:100%; color:var(--sub); background:none; border:none; padding:10px; margin-top:10px;">Cancel / Back</button>
-
-        <div id="editList" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;"></div>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3d_config_v9')) || {
-            "Plant Pot": { "Gray Plant": 12.5, "Gray Flower": 11.25, "Gold Plant": 12.5, "Gold Flowers": 15 },
-            "Cookie Cutter": { "Standard": 4 }
-        };
-        let sales = JSON.parse(localStorage.getItem('3d_sales_v9')) || [];
-        let activeField = 'total', buffers = { qty: "1", unit: "0", total: "0" }, editingKey = null;
+        let config = JSON.parse(localStorage.getItem('3D_CFG_v20')) || { "Plant Pot": { "Standard": 15.00 } };
+        let sales = JSON.parse(localStorage.getItem('3D_SLS_v20')) || [];
+        let activeField = 'qty', buffers = { qty: "1", unit: "0", total: "0" }, editSaleId = null;
 
-        function toggleSettings() {
-            document.getElementById('mainUI').classList.toggle('hidden');
-            document.getElementById('settingsUI').classList.toggle('hidden');
-            if(!editingKey) addVariantRow(true);
-            renderEditList();
+        // --- UI & LIFT LOGIC ---
+        function openNumpad(f) { 
+            activeField = f; buffers[f] = ""; 
+            document.querySelectorAll('.input-box').forEach(b => b.classList.remove('active'));
+            document.getElementById(`box-${f}`).classList.add('active');
+            
+            document.getElementById('numpad-drawer').classList.add('open');
+            document.body.style.paddingBottom = "380px"; // Lift space
+            
+            // Critical "Lift" scroll
+            setTimeout(() => {
+                document.getElementById('inputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
         }
 
-        function addVariantRow(clear = false) {
-            const container = document.getElementById('variantInputs');
-            if(clear) container.innerHTML = '';
-            const div = document.createElement('div');
-            div.className = 'variant-row';
-            div.innerHTML = `<input class="std var-name" placeholder="Name"><input class="std var-price" type="number" placeholder="$"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ff453a; font-size:1.2rem;">×</button>`;
-            container.appendChild(div);
+        function closeNumpad() { 
+            document.getElementById('numpad-drawer').classList.remove('open'); 
+            document.body.style.paddingBottom = "15px";
+            document.querySelectorAll('.input-box').forEach(b => b.classList.remove('active'));
         }
 
-        function saveProduct() {
-            const name = document.getElementById('newProdName').value;
-            const rows = document.querySelectorAll('.variant-row');
-            if(!name) return;
-            let varMap = {};
-            rows.forEach(row => {
-                let vN = row.querySelector('.var-name').value;
-                let vP = row.querySelector('.var-price').value;
-                if(vN) varMap[vN.trim()] = parseFloat(vP) || 0;
-            });
-            if(editingKey && editingKey !== name) delete config[editingKey];
-            config[name] = varMap;
-            localStorage.setItem('3d_config_v9', JSON.stringify(config));
-            cancelEdit(); initDropdowns(); renderEditList();
-        }
-
-        function editProduct(key) {
-            editingKey = key;
-            document.getElementById('setupTitle').innerText = "Editing: " + key;
-            document.getElementById('newProdName').value = key;
-            const container = document.getElementById('variantInputs');
-            container.innerHTML = '';
-            Object.entries(config[key]).forEach(([n, p]) => {
-                const div = document.createElement('div');
-                div.className = 'variant-row';
-                div.innerHTML = `<input class="std var-name" value="${n}"><input class="std var-price" type="number" value="${p}"><button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ff453a; font-size:1.2rem;">×</button>`;
-                container.appendChild(div);
-            });
-        }
-
-        function cancelEdit() {
-            editingKey = null;
-            document.getElementById('newProdName').value = "";
-            addVariantRow(true);
-            document.getElementById('setupTitle').innerText = "Add Product";
-            toggleSettings();
-        }
-
-        function initDropdowns() {
-            const sel = document.getElementById('selCategory');
-            const filter = document.getElementById('filterCat');
-            const options = Object.keys(config).map(k => `<option value="${k}">${k}</option>`).join('');
-            sel.innerHTML = options;
-            filter.innerHTML = `<option value="all">All Categories</option>` + options;
-            loadVariants();
-        }
-
-        function loadVariants() {
-            const cat = document.getElementById('selCategory').value;
-            document.getElementById('selVariant').innerHTML = Object.keys(config[cat]).map(v => `<option value="${v}">${v}</option>`).join('');
-            autoFillPrice();
-        }
-
-        function autoFillPrice() {
-            const cat = document.getElementById('selCategory').value;
-            const variant = document.getElementById('selVariant').value;
-            buffers.qty = "1";
-            buffers.unit = config[cat][variant].toString();
-            syncMath('unit'); updateDisplays();
-        }
-
-        function setActive(f) { activeField = f; document.querySelectorAll('.box').forEach(b => b.classList.remove('active')); document.getElementById(`box-${f}`).classList.add('active'); buffers[f] = ""; }
-        function press(n) { if (n === 'C') buffers[activeField] = ""; else buffers[activeField] += n; syncMath(activeField); updateDisplays(); }
-
-        function syncMath(src) {
+        // --- MATH LOGIC ---
+        function press(n) {
+            if(n === 'C') buffers[activeField] = ""; else buffers[activeField] += n;
             let q = parseFloat(buffers.qty) || 0, u = parseFloat(buffers.unit) || 0, t = parseFloat(buffers.total) || 0;
-            if (src === 'qty' || src === 'unit') buffers.total = (q * u).toFixed(2);
-            else if (src === 'total' && q > 0) buffers.unit = (t / q).toFixed(2);
+            if(activeField === 'qty' || activeField === 'unit') buffers.total = (q * u).toFixed(2);
+            else if(activeField === 'total') buffers.unit = q > 0 ? (t / q).toFixed(2) : "0";
+            updateDisplays();
         }
 
         function updateDisplays() {
@@ -209,77 +157,146 @@
             document.getElementById('disp-total').innerText = buffers.total || "0.00";
         }
 
+        // --- SALES LOGIC ---
         function logSale() {
-            const cat = document.getElementById('selCategory').value, v = document.getElementById('selVariant').value;
-            sales.unshift({ 
-                cat, var: v, qty: parseFloat(buffers.qty), unit: parseFloat(buffers.unit), total: parseFloat(buffers.total), 
-                timestamp: Date.now(),
-                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), 
-                date: new Date().toLocaleDateString([], {month:'short', day:'numeric'}) 
-            });
-            localStorage.setItem('3d_sales_v9', JSON.stringify(sales));
-            render();
+            let q = parseFloat(buffers.qty) || 0, t = parseFloat(buffers.total) || 0;
+            if(q <= 0 || t <= 0) return;
+            const sale = {
+                id: editSaleId || Date.now(),
+                cat: document.getElementById('selCategory').value,
+                var: document.getElementById('selVariant').value,
+                qty: q, unit: parseFloat(buffers.unit) || 0, total: t,
+                ts: new Date().toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }),
+                rawTs: editSaleId ? (sales.find(x=>x.id===editSaleId).rawTs) : Date.now()
+            };
+            if(editSaleId) { sales = sales.map(s => s.id === editSaleId ? sale : s); editSaleId = null; }
+            else { sales.unshift(sale); }
+            document.getElementById('mainLogBtn').innerText = "LOG SALE";
+            document.getElementById('mainLogBtn').style.background = "var(--accent)";
+            save();
         }
 
         function render() {
-            const filterVal = document.getElementById('filterCat').value;
-            const sortVal = document.getElementById('sortMode').value;
-            let grandTotal = 0, grouped = {};
+            let grandTotal = 0, grouped = {}, f = document.getElementById('filterCat').value, sMode = document.getElementById('sortMode').value;
             
-            // Filter and Sort Logic
-            let displaySales = [...sales];
-            if(filterVal !== 'all') displaySales = displaySales.filter(s => s.cat === filterVal);
-            
-            displaySales.sort((a, b) => {
-                if(sortVal === 'newest') return b.timestamp - a.timestamp;
-                if(sortVal === 'oldest') return a.timestamp - b.timestamp;
-                if(sortVal === 'high') return b.total - a.total;
-                if(sortVal === 'low') return a.total - b.total;
-            });
-
-            // Summary Calculation
             sales.forEach(s => {
                 grandTotal += s.total;
-                if (!grouped[s.cat]) grouped[s.cat] = { total: 0, subs: {} };
-                grouped[s.cat].total += s.total;
-                grouped[s.cat].subs[s.var] = (grouped[s.cat].subs[s.var] || 0) + s.total;
+                if(!grouped[s.cat]) grouped[s.cat] = { total: 0, qty: 0, vars: {} };
+                grouped[s.cat].total += s.total; grouped[s.cat].qty += s.qty;
+                if(!grouped[s.cat].vars[s.var]) grouped[s.cat].vars[s.var] = { total: 0, qty: 0 };
+                grouped[s.cat].vars[s.var].total += s.total; grouped[s.cat].vars[s.var].qty += s.qty;
             });
 
-            const logArea = document.getElementById('historyLog');
-            logArea.innerHTML = '<label>Sales Details</label>';
-            displaySales.forEach((s, idx) => {
-                logArea.innerHTML += `
-                <div class="history-card" onclick="deleteSale(${idx})">
-                    <div class="hist-top">
-                        <strong>${s.qty}x ${s.var}</strong>
-                        <span style="color:var(--accent); font-weight:bold;">$${s.total.toFixed(2)}</span>
-                    </div>
-                    <div class="hist-date">${s.cat} • $${s.unit.toFixed(2)}/ea • ${s.date} ${s.time}</div>
-                </div>`;
-            });
-
-            let html = '<label style="margin-top:20px">Summary</label>';
-            for (let cat in grouped) {
-                html += `<div class="group-header"><span>${cat}</span><span>$${grouped[cat].total.toFixed(2)}</span></div>`;
-                for (let sub in grouped[cat].subs) html += `<div class="sub-row"><span>└ ${sub}</span><span>$${grouped[cat].subs[sub].toFixed(2)}</span></div>`;
-            }
-            document.getElementById('summaryArea').innerHTML = html;
             document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+
+            // Two-Tier Summary Rendering
+            let sumHtml = `<div class="summary-row" style="background:#2c2c2e; font-size:0.65rem; color:var(--sub);"><span>NET SUMMARY</span><span>QTY | TOTAL</span></div>`;
+            for(let c in grouped) {
+                sumHtml += `<div class="summary-row cat-row"><span>${c}<span class="net-badge">${grouped[c].qty}</span></span><span>$${grouped[c].total.toFixed(2)}</span></div>`;
+                for(let v in grouped[c].vars) {
+                    sumHtml += `<div class="summary-row" style="padding-left:30px; font-size:0.9rem; color:var(--sub);"><span>${v}<span class="net-badge">${grouped[c].vars[v].qty}</span></span><span>$${grouped[c].vars[v].total.toFixed(2)}</span></div>`;
+                }
+            }
+            document.getElementById('summaryArea').innerHTML = sumHtml;
+
+            // History Rendering
+            let list = f === "All" ? [...sales] : sales.filter(x => x.cat === f);
+            if(sMode === 'high') list.sort((a,b) => b.total - a.total);
+            else if(sMode === 'low') list.sort((a,b) => a.total - b.total);
+            else if(sMode === 'oldest') list.sort((a,b) => a.rawTs - b.rawTs);
+            else list.sort((a,b) => b.rawTs - a.rawTs);
+
+            document.getElementById('historyLog').innerHTML = list.map(s => `
+                <div class="swipe-item">
+                    <div class="swipe-actions">
+                        <div class="action-btn" style="background:var(--edit)" onclick="editSale(${s.id})">Edit</div>
+                        <div class="action-btn" style="background:var(--danger)" onclick="if(confirm('Delete?')){sales=sales.filter(x=>x.id!=${s.id});save();}">Del</div>
+                    </div>
+                    <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
+                        <div><b>${s.qty}x ${s.var}</b><br><small style="color:var(--sub)">${s.cat} • ${s.ts}</small></div>
+                        <b style="color:var(--accent)">$${s.total.toFixed(2)}</b>
+                    </div>
+                </div>`).join('');
         }
 
-        function renderEditList() {
-            const area = document.getElementById('editList');
-            area.innerHTML = '<label>Manage Products</label>';
-            Object.keys(config).forEach(k => {
-                area.innerHTML += `<div class="edit-item"><span>${k}</span><div><button onclick="editProduct('${k}')" style="background:#007aff; border:none; color:white; padding:6px 12px; border-radius:6px; margin-right:5px;">Edit</button><button onclick="deleteConfigItem('${k}')" style="background:#ff453a; border:none; color:white; padding:6px 12px; border-radius:6px;">×</button></div></div>`;
-            });
+        // --- SWIPE LOGIC ---
+        let tX = 0;
+        function hStart(e) { tX = e.touches[0].clientX; }
+        function hMove(e, el) { let d = tX - e.touches[0].clientX; if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`; }
+        function hEnd(e, el) { let d = tX - e.changedTouches[0].clientX; el.style.transform = d > 70 ? `translateX(-140px)` : `translateX(0)`; }
+
+        function editSale(id) {
+            const s = sales.find(x => x.id === id); if(!s) return;
+            editSaleId = id; document.getElementById('selCategory').value = s.cat; loadVariants();
+            document.getElementById('selVariant').value = s.var;
+            buffers = { qty: s.qty.toString(), unit: s.unit.toString(), total: s.total.toString() };
+            updateDisplays(); document.getElementById('mainLogBtn').innerText = "UPDATE SALE";
+            document.getElementById('mainLogBtn').style.background = "var(--edit)";
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        function deleteConfigItem(k) { if(confirm("Delete category?")) { delete config[k]; localStorage.setItem('3d_config_v9', JSON.stringify(config)); renderEditList(); initDropdowns(); } }
-        function deleteSale(idx) { if(confirm("Remove this sale?")) { sales.splice(idx,1); localStorage.setItem('3d_sales_v9', JSON.stringify(sales)); render(); } }
-        function clearAll() { if(confirm("FULL RESET?")) { localStorage.clear(); location.reload(); } }
+        // --- SETUP & UTILS ---
+        function save() { localStorage.setItem('3D_CFG_v20', JSON.stringify(config)); localStorage.setItem('3D_SLS_v20', JSON.stringify(sales)); render(); }
         
-        window.onload = () => { initDropdowns(); render(); setActive('total'); };
+        function toggleUI(m) {
+            document.getElementById('trackerUI').className = m==='setup'?'hidden':'';
+            document.getElementById('setupUI').className = m==='setup'?'':'hidden';
+            if(m==='setup') renderManage();
+        }
+
+        function addVarRow(v="", p="") {
+            const d = document.createElement('div'); d.style = "display:flex; gap:10px; margin-bottom:10px;";
+            d.innerHTML = `<input class="std-input vn" placeholder="Variety" value="${v}" style="flex:2; margin:0;"><input class="std-input vp" type="number" placeholder="$" value="${p}" style="flex:1; margin:0;">`;
+            document.getElementById('variantList').appendChild(d);
+        }
+
+        function saveConfig() {
+            const c = document.getElementById('newCat').value; if(!c) return;
+            config[c] = {}; 
+            document.querySelectorAll('.vn').forEach((n,i) => { if(n.value) config[c][n.value] = parseFloat(document.querySelectorAll('.vp')[i].value) || 0; });
+            save(); initApp(); toggleUI('tracker');
+        }
+
+        function renderManage() {
+            document.getElementById('manageList').innerHTML = Object.keys(config).map(c => `
+                <div class="summary-row"><span>${c}</span>
+                    <div>
+                        <button class="num-btn" style="padding:5px 10px; font-size:0.7rem; background:var(--edit);" onclick="editCfg('${c}')">Edit</button>
+                        <button class="num-btn" style="padding:5px 10px; font-size:0.7rem; background:var(--danger); margin-left:5px;" onclick="if(confirm('Delete?')){delete config['${c}'];save();renderManage();initApp();}">X</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function editCfg(c) { 
+            document.getElementById('newCat').value = c; 
+            document.getElementById('variantList').innerHTML = ""; 
+            for(let v in config[c]) addVarRow(v, config[c][v]); 
+        }
+
+        function initApp() {
+            const cats = Object.keys(config);
+            document.getElementById('selCategory').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('filterCat').innerHTML = `<option value="All">All Categories</option>` + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            loadVariants();
+        }
+
+        function loadVariants() { 
+            const c = document.getElementById('selCategory').value; 
+            document.getElementById('selVariant').innerHTML = Object.keys(config[c]).map(v => `<option value="${v}">${v}</option>`).join(''); 
+            autoFill(); 
+        }
+
+        function autoFill() { 
+            const c = document.getElementById('selCategory').value, v = document.getElementById('selVariant').value; 
+            buffers = { qty: "1", unit: config[c][v].toString(), total: config[c][v].toString() }; 
+            updateDisplays(); 
+        }
+
+        function exportJSON() { const b = new Blob([JSON.stringify({config, sales}, null, 2)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `3d_pro_v20.json`; a.click(); }
+        function importJSON() { const i = document.createElement('input'); i.type = 'file'; i.onchange = e => { const r = new FileReader(); r.onload = () => { const d = JSON.parse(r.result); config = d.config; sales = d.sales; save(); initApp(); toggleUI('tracker'); }; r.readAsText(e.target.files[0]); }; i.click(); }
+        function resetAll() { if(confirm("NUKE ALL DATA?")) { localStorage.clear(); location.reload(); } }
+
+        window.onload = () => { initApp(); render(); };
     </script>
 </body>
 </html>
