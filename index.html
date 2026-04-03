@@ -1,340 +1,737 @@
-This v23 update is a structural overhaul focused on reliability and functional integrity. I've identified that the previous "transform" and "scrolling" logic for the numpad was intercepting click events (making buttons feel dead) and that the sorting logic was using inconsistent timestamps.
-The Critical Fixes
- * Responsive Buttons: Removed pointer-events interference and fixed z-index layering in the popups. All buttons (Gear, FAB, Save, Close) are now high-priority targets.
- * Logical Sorting: Added a strict Date.now() timestamp to every sale. "Newest" and "Oldest" now reference a hidden integer, ensuring the order never breaks.
- * Backup & Restore:
-   * Backup: Fixed the Blob generation and ensured the file name includes the version.
-   * Restore (with Guardrails): Now includes a Confirmation Dialog and a Format Validation Check. It will reject files that aren't valid 3D Sales Pro JSON exports to prevent database corruption.
- * Numpad Accessibility: Switched from a CSS transform lift to a dynamic marginBottom push. This ensures the input you are typing into stays in the center of the screen without disabling clickability.
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Sales Pro v23</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>SeRecorder Pro v26</title>
     <style>
-        :root { --bg: #000; --card: #1c1c1e; --accent: #34c759; --text: #fff; --sub: #8e8e93; --border: #333; --danger: #ff453a; --edit: #007aff; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; -webkit-tap-highlight-color: transparent; height: 100vh; overflow-x: hidden; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .grand-total-val { font-size: 2rem; font-weight: 800; color: var(--accent); }
-        .icon-btn { background: none; border: none; color: var(--sub); font-size: 1.5rem; padding: 10px; cursor: pointer; z-index: 10; }
+      /* UI THEME: Deep Dark & Clean */
+      :root {
+        --bg: #000000;
+        --card: #1c1c1e;
+        --accent: #32d74b;
+        --text: #ffffff;
+        --sub: #8e8e93;
+        --border: #333333;
+        --danger: #ff453a;
+        --edit: #0a84ff;
+      }
 
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 100; border: none; font-weight: bold; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 500; display: none; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        .modal.open { display: flex; }
-        .modal-scroll { flex: 1; overflow-y: auto; transition: margin-bottom 0.3s ease; }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-top: 10px;
+      }
+      .grand-total-val {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--accent);
+        letter-spacing: -1px;
+      }
 
-        .std-select, .std-input { width: 100%; background: var(--card); border: 1px solid var(--border); color: white; padding: 16px; border-radius: 12px; font-size: 1rem; margin-bottom: 12px; box-sizing: border-box; -webkit-appearance: none; }
-        .input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .input-box { background: var(--card); padding: 12px 5px; border-radius: 12px; text-align: center; border: 2px solid transparent; cursor: pointer; }
-        .input-box.active { border-color: var(--accent); background: #263529; }
-        .box-label { font-size: 0.65rem; color: var(--sub); display: block; margin-bottom: 4px; text-transform: uppercase; }
-        .box-val { font-size: 1.1rem; font-weight: bold; }
+      /* Floating Action Button */
+      .fab {
+        position: fixed;
+        bottom: 30px;
+        right: 25px;
+        width: 65px;
+        height: 65px;
+        background: var(--accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        color: #000;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        z-index: 90;
+        border: none;
+        font-weight: bold;
+      }
 
-        .log-btn { background: var(--accent); color: #000; width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem; font-weight: 800; margin-top: 10px; }
+      /* Modal / Popup Logic */
+      #logModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 500;
+        display: none;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+      }
+      #logModal.open {
+        display: flex;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
 
-        .list-container { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 20px; }
-        .row { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #2c2c2e; align-items: center; }
-        .cat-row { background: #2c2c2e; font-weight: bold; border-left: 4px solid var(--accent); }
-        .net-badge { background: #444; color: #fff; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 8px; }
+      .std-select,
+      .std-input {
+        width: 100%;
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: white;
+        padding: 15px;
+        border-radius: 14px;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        box-sizing: border-box;
+        appearance: none;
+        -webkit-appearance: none;
+      }
 
-        .swipe-item { position: relative; background: var(--bg); overflow: hidden; border-bottom: 1px solid #2c2c2e; }
-        .swipe-content { position: relative; background: var(--card); padding: 15px; z-index: 2; transition: transform 0.3s ease; display: flex; justify-content: space-between; align-items: center; }
-        .swipe-actions { position: absolute; top: 0; right: 0; bottom: 0; width: 140px; display: flex; z-index: 1; }
-        .action-btn { flex: 1; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold; }
+      .input-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      .input-box {
+        background: var(--card);
+        padding: 12px 5px;
+        border-radius: 12px;
+        text-align: center;
+        border: 2px solid transparent;
+        transition: 0.2s;
+      }
+      .input-box.active {
+        border-color: var(--accent);
+        background: #1a2a1d;
+      }
+      .box-label {
+        font-size: 0.65rem;
+        color: var(--sub);
+        display: block;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .box-val {
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
 
-        #numpad-drawer { position: fixed; bottom: 0; left: 0; right: 0; background: #1c1c1e; padding: 15px 15px 35px; border-radius: 20px 20px 0 0; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease; border-top: 1px solid var(--border); }
-        #numpad-drawer.open { transform: translateY(0); }
-        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
-        .num-btn { background: #3a3a3c; border: none; color: white; padding: 18px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; -webkit-user-select: none; }
-        
-        .hidden { display: none !important; }
+      .log-btn {
+        background: var(--accent);
+        color: #000;
+        width: 100%;
+        padding: 20px;
+        border-radius: 18px;
+        border: none;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-top: 10px;
+      }
+
+      /* Summary Styling */
+      .list-container {
+        background: var(--card);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+      }
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 15px;
+        border-bottom: 1px solid #2c2c2e;
+        align-items: center;
+      }
+      .cat-row {
+        background: #2c2c2e;
+        font-weight: bold;
+        border-left: 4px solid var(--accent);
+      }
+      .net-badge {
+        background: #444;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        margin-left: 8px;
+        font-weight: 600;
+      }
+
+      /* Swipe items */
+      .swipe-item {
+        position: relative;
+        background: var(--bg);
+        overflow: hidden;
+        border-bottom: 1px solid #2c2c2e;
+      }
+      .swipe-content {
+        position: relative;
+        background: var(--card);
+        padding: 15px;
+        z-index: 2;
+        transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .swipe-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 140px;
+        display: flex;
+        z-index: 1;
+      }
+      .action-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      /* Numpad */
+      .numpad-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+        margin-top: 10px;
+      }
+      .num-btn {
+        background: #2c2c2e;
+        border: none;
+        color: white;
+        padding: 18px;
+        border-radius: 15px;
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+      .num-btn:active {
+        background: #3a3a3c;
+      }
+
+      .hidden {
+        display: none !important;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div id="mainView">
-        <div class="header">
-            <div>
-                <div style="color:var(--sub); font-size:0.7rem;">GRAND NET</div>
-                <div class="grand-total-val">$<span id="grandTotal">0.00</span></div>
-            </div>
-            <button class="icon-btn" onclick="toggleUI('setup')">⚙️</button>
+      <div class="header">
+        <div>
+          <div style="color: var(--sub); font-size: 0.75rem; font-weight: 600">
+            NET REVENUE
+          </div>
+          <div class="grand-total-val">$<span id="grandTotal">0.00</span></div>
         </div>
+        <button
+          class="num-btn"
+          style="padding: 10px 20px; font-size: 0.9rem"
+          onclick="toggleUI('setup')"
+        >
+          Setup
+        </button>
+      </div>
 
-        <div id="summaryArea" class="list-container"></div>
+      <div id="summaryArea" class="list-container"></div>
 
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <select class="std-select" id="filterCat" onchange="render()" style="flex:1; padding:10px; font-size:0.8rem;"></select>
-            <select class="std-select" id="sortMode" onchange="render()" style="flex:1; padding:10px; font-size:0.8rem;">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="high">Price: High</option>
-            </select>
-        </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px">
+        <select
+          class="std-select"
+          id="filterCat"
+          onchange="render()"
+          style="flex: 1.5; padding: 10px; font-size: 0.85rem; margin-bottom: 0"
+        ></select>
+        <select
+          class="std-select"
+          id="sortMode"
+          onchange="render()"
+          style="flex: 1; padding: 10px; font-size: 0.85rem; margin-bottom: 0"
+        >
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="high">$$ High</option>
+          <option value="low">$$ Low</option>
+        </select>
+      </div>
 
-        <div id="historyLog" class="list-container"></div>
-        <button class="fab" onclick="openLogModal()">+</button>
+      <div id="historyLog" class="list-container"></div>
+      <button class="fab" onclick="openLogModal()">+</button>
     </div>
 
-    <div id="logModal" class="modal">
-        <div class="modal-header">
-            <h2 id="modalTitle">New Sale</h2>
-            <button onclick="closeLogModal()" class="icon-btn" style="color:var(--danger)">✕</button>
+    <div id="logModal">
+      <div class="modal-header">
+        <h2 id="modalTitle" style="margin: 0">Log Sale</h2>
+        <button
+          onclick="closeLogModal()"
+          style="
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.8rem;
+            font-weight: bold;
+          "
+        >
+          ✕
+        </button>
+      </div>
+
+      <select
+        class="std-select"
+        id="selCategory"
+        onchange="loadVariants()"
+      ></select>
+      <select class="std-select" id="selVariant" onchange="autoFill()"></select>
+
+      <div class="input-group">
+        <div class="input-box" id="box-qty" onclick="setActiveField('qty')">
+          <span class="box-label">Count</span>
+          <div class="box-val" id="disp-qty">1</div>
         </div>
-        <div class="modal-scroll" id="saleScroll">
-            <label class="box-label">Category</label>
-            <select class="std-select" id="selCategory" onchange="loadVariants()"></select>
-            <label class="box-label">Variety</label>
-            <select class="std-select" id="selVariant" onchange="autoFill()"></select>
-            
-            <div class="input-group">
-                <div class="input-box" id="box-qty" onclick="openNumpad('qty', 'saleScroll')"><span class="box-label">Qty</span><div class="box-val" id="disp-qty">1</div></div>
-                <div class="input-box" id="box-unit" onclick="openNumpad('unit', 'saleScroll')"><span class="box-label">Unit</span><div class="box-val" id="disp-unit">0.00</div></div>
-                <div class="input-box" id="box-total" onclick="openNumpad('total', 'saleScroll')"><span class="box-label">Total</span><div class="box-val" id="disp-total">0.00</div></div>
-            </div>
-            <button class="log-btn" id="mainLogBtn" onclick="processSale()">LOG SALE</button>
+        <div class="input-box" id="box-unit" onclick="setActiveField('unit')">
+          <span class="box-label">Unit $</span>
+          <div class="box-val" id="disp-unit">0.00</div>
         </div>
+        <div class="input-box" id="box-total" onclick="setActiveField('total')">
+          <span class="box-label">Total $</span>
+          <div class="box-val" id="disp-total">0.00</div>
+        </div>
+      </div>
+
+      <div class="numpad-grid">
+        <button class="num-btn" onclick="press('1')">1</button
+        ><button class="num-btn" onclick="press('2')">2</button
+        ><button class="num-btn" onclick="press('3')">3</button>
+        <button class="num-btn" onclick="press('4')">4</button
+        ><button class="num-btn" onclick="press('5')">5</button
+        ><button class="num-btn" onclick="press('6')">6</button>
+        <button class="num-btn" onclick="press('7')">7</button
+        ><button class="num-btn" onclick="press('8')">8</button
+        ><button class="num-btn" onclick="press('9')">9</button>
+        <button class="num-btn" onclick="press('.')">.</button
+        ><button class="num-btn" onclick="press('0')">0</button>
+        <button
+          class="num-btn"
+          onclick="press('C')"
+          style="color: var(--danger)"
+        >
+          C
+        </button>
+      </div>
+      <button class="log-btn" id="mainLogBtn" onclick="processSale()">
+        LOG SALE
+      </button>
     </div>
 
     <div id="setupUI" class="hidden">
-        <div class="header">
-            <h2>Settings</h2>
-            <button class="num-btn" style="padding: 8px 15px; font-size: 0.8rem;" onclick="toggleUI('tracker')">Back</button>
-        </div>
-        
-        <button class="log-btn" style="margin-bottom:20px;" onclick="openProductModal()">+ NEW PRODUCT</button>
-        <div id="manageList" class="list-container"></div>
+      <h2 style="margin-top: 0">Product Setup</h2>
+      <input
+        class="std-input"
+        id="newCat"
+        placeholder="Category Name (e.g. Plant Pot)"
+      />
+      <div id="variantList"></div>
+      <button
+        class="num-btn"
+        style="width: 100%; margin-bottom: 12px; font-size: 1rem"
+        onclick="addVarRow()"
+      >
+        + Add Variety
+      </button>
+      <button
+        class="log-btn"
+        onclick="saveConfig()"
+        style="background: var(--edit); color: white"
+      >
+        SAVE PRODUCT
+      </button>
 
-        <div class="box-label" style="margin:20px 0 10px 10px;">Maintenance</div>
-        <div class="list-container" style="padding:15px; display:grid; gap:10px;">
-            <button class="num-btn" style="font-size:0.9rem;" onclick="exportJSON()">Download Backup</button>
-            <button class="num-btn" style="font-size:0.9rem;" onclick="importJSON()">Restore Data</button>
-            <button onclick="nuke()" style="color:var(--danger); border:none; background:none; font-size:0.7rem; margin-top:10px;">WIPE ALL DATA</button>
-        </div>
-    </div>
+      <div
+        class="section-title"
+        style="
+          margin: 30px 0 10px;
+          color: var(--sub);
+          font-size: 0.8rem;
+          font-weight: bold;
+        "
+      >
+        MANAGE PRODUCTS
+      </div>
+      <div id="manageList" class="list-container"></div>
 
-    <div id="productModal" class="modal">
-        <div class="modal-header">
-            <h2>Product Details</h2>
-            <button onclick="closeProductModal()" class="icon-btn" style="color:var(--danger)">✕</button>
-        </div>
-        <div class="modal-scroll" id="prodScroll">
-            <input class="std-input" id="newCat" placeholder="Category Name">
-            <div id="variantList"></div>
-            <button class="num-btn" style="width:100%; margin-bottom:10px; font-size:0.9rem;" onclick="addVarRow()">+ Add Variety</button>
-            <button class="log-btn" onclick="saveConfig()">SAVE PRODUCT</button>
-        </div>
-    </div>
-
-    <div id="numpad-drawer">
-        <div class="numpad-grid">
-            <button class="num-btn" onclick="press('1')">1</button><button class="num-btn" onclick="press('2')">2</button><button class="num-btn" onclick="press('3')">3</button>
-            <button class="num-btn" onclick="press('4')">4</button><button class="num-btn" onclick="press('5')">5</button><button class="num-btn" onclick="press('6')">6</button>
-            <button class="num-btn" onclick="press('7')">7</button><button class="num-btn" onclick="press('8')">8</button><button class="num-btn" onclick="press('9')">9</button>
-            <button class="num-btn" onclick="press('.')">.</button><button class="num-btn" onclick="press('0')">0</button>
-            <button class="num-btn" onclick="press('C')" style="color:var(--danger)">C</button>
-            <button class="num-btn" onclick="closeNumpad()" style="grid-column: span 3; background:var(--accent); color:black; margin-top:10px;">CONFIRM</button>
-        </div>
+      <div
+        style="
+          background: var(--card);
+          padding: 20px;
+          border-radius: 18px;
+          margin-top: 20px;
+          border: 1px solid var(--border);
+        "
+      >
+        <button
+          class="num-btn"
+          style="
+            width: 100%;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            background: #444;
+          "
+          onclick="exportJSON()"
+        >
+          Backup JSON
+        </button>
+        <button
+          class="num-btn"
+          style="width: 100%; font-size: 0.9rem; background: #444"
+          onclick="importJSON()"
+        >
+          Restore JSON
+        </button>
+      </div>
+      <button
+        class="log-btn"
+        style="background: #2c2c2e; color: #fff; margin-top: 20px"
+        onclick="toggleUI('tracker')"
+      >
+        BACK TO SALES
+      </button>
     </div>
 
     <script>
-        let config = JSON.parse(localStorage.getItem('3D_CFG_v23')) || { "Sample": { "Item": 10.00 } };
-        let sales = JSON.parse(localStorage.getItem('3D_SLS_v23')) || [];
-        let activeField = 'qty', buffers = { qty: "1", unit: "0", total: "0" }, editId = null, currentScrollId = null;
+      // Core Storage Keys
+      let config = JSON.parse(localStorage.getItem("3D_CFG_v21")) || {
+        Sample: { Standard: 10.0 },
+      };
+      let sales = JSON.parse(localStorage.getItem("3D_SLS_v21")) || [];
+      let activeField = "qty",
+        buffers = { qty: "1", unit: "0", total: "0" },
+        editId = null;
 
-        // UI POPUP HANDLERS
-        function openLogModal() { document.getElementById('logModal').classList.add('open'); initApp(); }
-        function closeLogModal() { document.getElementById('logModal').classList.remove('open'); closeNumpad(); editId = null; document.getElementById('mainLogBtn').innerText = "LOG SALE"; document.getElementById('mainLogBtn').style.background="var(--accent)"; }
-        
-        function openProductModal(catName = "") {
-            document.getElementById('productModal').classList.add('open');
-            document.getElementById('variantList').innerHTML = "";
-            if(catName) {
-                document.getElementById('newCat').value = catName;
-                for(let v in config[catName]) addVarRow(v, config[catName][v]);
-            } else {
-                document.getElementById('newCat').value = ""; addVarRow();
-            }
+      function openLogModal() {
+        document.getElementById("logModal").classList.add("open");
+        initApp();
+        setActiveField("qty");
+      }
+      function closeLogModal() {
+        document.getElementById("logModal").classList.remove("open");
+        editId = null;
+        document.getElementById("mainLogBtn").innerText = "LOG SALE";
+        document.getElementById("mainLogBtn").style.background =
+          "var(--accent)";
+        document.getElementById("mainLogBtn").style.color = "black";
+      }
+
+      // --- BUFFER & NUMPAD LOGIC ---
+      function setActiveField(f) {
+        activeField = f;
+        document
+          .querySelectorAll(".input-box")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById(`box-${f}`).classList.add("active");
+      }
+
+      function press(n) {
+        if (n === "C") {
+          buffers[activeField] = activeField === "qty" ? "1" : "0";
+        } else {
+          if (
+            buffers[activeField] === "0" ||
+            (buffers[activeField] === "1" &&
+              activeField === "qty" &&
+              buffers.qty.length === 1)
+          ) {
+            buffers[activeField] = n;
+          } else {
+            if (n === "." && buffers[activeField].includes(".")) return;
+            buffers[activeField] += n;
+          }
         }
-        function closeProductModal() { document.getElementById('productModal').classList.remove('open'); closeNumpad(); }
 
-        // NUMPAD SYSTEM
-        function openNumpad(f, scrollId) {
-            activeField = f; buffers[f] = ""; currentScrollId = scrollId;
-            document.querySelectorAll('.input-box').forEach(b => b.classList.remove('active'));
-            document.getElementById(`box-${f}`).classList.add('active');
-            document.getElementById('numpad-drawer').classList.add('open');
-            document.getElementById(scrollId).style.marginBottom = "350px";
+        let q = parseFloat(buffers.qty) || 0,
+          u = parseFloat(buffers.unit) || 0,
+          t = parseFloat(buffers.total) || 0;
+        if (activeField === "qty" || activeField === "unit")
+          buffers.total = (q * u).toFixed(2);
+        else if (activeField === "total")
+          buffers.unit = q > 0 ? (t / q).toFixed(2) : "0";
+
+        updateDisplays();
+      }
+
+      function updateDisplays() {
+        document.getElementById("disp-qty").innerText = buffers.qty;
+        document.getElementById("disp-unit").innerText = buffers.unit;
+        document.getElementById("disp-total").innerText = buffers.total;
+      }
+
+      // --- DATA PROCESSING ---
+      function processSale() {
+        let q = parseFloat(buffers.qty) || 0,
+          t = parseFloat(buffers.total) || 0;
+        if (q <= 0 || t <= 0) return;
+        const sale = {
+          id: editId || Date.now(),
+          cat: document.getElementById("selCategory").value,
+          var: document.getElementById("selVariant").value,
+          qty: q,
+          unit: parseFloat(buffers.unit) || 0,
+          total: t,
+          ts: new Date().toLocaleString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          rawTs: editId ? sales.find((x) => x.id === editId).rawTs : Date.now(),
+        };
+        if (editId) sales = sales.map((s) => (s.id === editId ? sale : s));
+        else sales.unshift(sale);
+        save();
+        closeLogModal();
+      }
+
+      function render() {
+        let grand = 0,
+          grouped = {},
+          f = document.getElementById("filterCat").value,
+          sMode = document.getElementById("sortMode").value;
+        sales.forEach((s) => {
+          grand += s.total;
+          if (!grouped[s.cat]) grouped[s.cat] = { total: 0, qty: 0, vars: {} };
+          grouped[s.cat].total += s.total;
+          grouped[s.cat].qty += s.qty;
+          if (!grouped[s.cat].vars[s.var])
+            grouped[s.cat].vars[s.var] = { total: 0, qty: 0 };
+          grouped[s.cat].vars[s.var].total += s.total;
+          grouped[s.cat].vars[s.var].qty += s.qty;
+        });
+        document.getElementById("grandTotal").innerText = grand.toLocaleString(
+          undefined,
+          { minimumFractionDigits: 2 }
+        );
+
+        // Summary Section
+        let sumH = `<div class="summary-row" style="background:#2c2c2e; font-size:0.65rem; border-bottom:2px solid #000;"><span style="color:var(--sub)">CATEGORY BREAKDOWN</span><span style="color:var(--sub)">QTY | TOTAL</span></div>`;
+        for (let c in grouped) {
+          sumH += `<div class="summary-row cat-row"><span>${c} <span class="net-badge">${
+            grouped[c].qty
+          }</span></span><span>$${grouped[c].total.toFixed(2)}</span></div>`;
+          for (let v in grouped[c].vars) {
+            sumH += `<div class="summary-row" style="padding-left:35px; font-size:0.9rem; color:var(--sub);"><span>${v} <span class="net-badge" style="background:#333">${
+              grouped[c].vars[v].qty
+            }</span></span><span>$${grouped[c].vars[v].total.toFixed(
+              2
+            )}</span></div>`;
+          }
         }
-        function closeNumpad() {
-            document.getElementById('numpad-drawer').classList.remove('open');
-            if(currentScrollId) document.getElementById(currentScrollId).style.marginBottom = "0";
-            document.querySelectorAll('.input-box').forEach(b => b.classList.remove('active'));
-        }
-        function press(n) {
-            if(n === 'C') buffers[activeField] = ""; else buffers[activeField] += n;
-            let q = parseFloat(buffers.qty) || 0, u = parseFloat(buffers.unit) || 0, t = parseFloat(buffers.total) || 0;
-            if(activeField === 'qty' || activeField === 'unit') buffers.total = (q * u).toFixed(2);
-            else if(activeField === 'total') buffers.unit = q > 0 ? (t / q).toFixed(2) : "0";
-            updateDisplays();
-        }
-        function updateDisplays() {
-            if(document.getElementById('disp-qty')) {
-                document.getElementById('disp-qty').innerText = buffers.qty || "0";
-                document.getElementById('disp-unit').innerText = buffers.unit || "0.00";
-                document.getElementById('disp-total').innerText = buffers.total || "0.00";
-            }
-        }
+        document.getElementById("summaryArea").innerHTML =
+          sumH ||
+          '<div style="padding:20px; text-align:center; color:var(--sub)">No sales logged.</div>';
 
-        // RENDER LOGIC
-        function render() {
-            let totalRev = 0, grouped = {}, f = document.getElementById('filterCat').value, sMode = document.getElementById('sortMode').value;
-            sales.forEach(s => {
-                totalRev += s.total;
-                if(!grouped[s.cat]) grouped[s.cat] = { total: 0, qty: 0, vars: {} };
-                grouped[s.cat].total += s.total; grouped[s.cat].qty += s.qty;
-                if(!grouped[s.cat].vars[s.var]) grouped[s.cat].vars[s.var] = { total: 0, qty: 0 };
-                grouped[s.cat].vars[s.var].total += s.total; grouped[s.cat].vars[s.var].qty += s.qty;
-            });
-            document.getElementById('grandTotal').innerText = totalRev.toFixed(2);
+        // History Log
+        let list = f === "All" ? [...sales] : sales.filter((x) => x.cat === f);
+        if (sMode === "high") list.sort((a, b) => b.total - a.total);
+        else if (sMode === "low") list.sort((a, b) => a.total - b.total);
+        else if (sMode === "oldest") list.sort((a, b) => a.rawTs - b.rawTs);
+        else list.sort((a, b) => b.rawTs - a.rawTs);
 
-            let sumH = `<div class="row" style="background:#333; font-size:0.6rem;"><span>NET SUMMARY</span><span>QTY | TOTAL</span></div>`;
-            for(let c in grouped) {
-                sumH += `<div class="row cat-row"><span>${c} <span class="net-badge">${grouped[c].qty}</span></span><span>$${grouped[c].total.toFixed(2)}</span></div>`;
-                for(let v in grouped[c].vars) {
-                    sumH += `<div class="row" style="padding-left:30px; font-size:0.85rem; color:var(--sub);"><span>${v} <span class="net-badge">${grouped[c].vars[v].qty}</span></span><span>$${grouped[c].vars[v].total.toFixed(2)}</span></div>`;
-                }
-            }
-            document.getElementById('summaryArea').innerHTML = sumH;
-
-            let list = f === "All" ? [...sales] : sales.filter(x => x.cat === f);
-            if(sMode === 'high') list.sort((a,b) => b.total - a.total);
-            else if(sMode === 'oldest') list.sort((a,b) => a.rawTs - b.rawTs);
-            else list.sort((a,b) => b.rawTs - a.rawTs);
-
-            document.getElementById('historyLog').innerHTML = list.map(s => `
+        document.getElementById("historyLog").innerHTML = list
+          .map(
+            (s) => `
                 <div class="swipe-item">
                     <div class="swipe-actions">
-                        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${s.id})">Edit</div>
-                        <div class="action-btn" style="background:var(--danger)" onclick="delSale(${s.id})">Del</div>
+                        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${
+                          s.id
+                        })">Edit</div>
+                        <div class="action-btn" style="background:var(--danger)" onclick="if(confirm('Delete this sale?')){sales=sales.filter(x=>x.id!=${
+                          s.id
+                        });save();}">Del</div>
                     </div>
-                    <div class="swipe-content" ontouchstart="hS(event)" ontouchmove="hM(event, this)" ontouchend="hE(event, this)">
-                        <div><b>${s.qty}x ${s.var}</b><br><small style="color:var(--sub)">${s.cat} • ${s.ts}</small></div>
-                        <b style="color:var(--accent)">$${s.total.toFixed(2)}</b>
+                    <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
+                        <div><b style="font-size:1rem;">${s.qty}x ${
+              s.var
+            }</b><br><small style="color:var(--sub)">${s.cat} • ${
+              s.ts
+            }</small></div>
+                        <b style="color:var(--accent); font-size:1.1rem;">$${s.total.toFixed(
+                          2
+                        )}</b>
                     </div>
-                </div>`).join('');
-        }
+                </div>`
+          )
+          .join("");
+      }
 
-        // SWIPE SYSTEM
-        let tX = 0;
-        function hS(e) { tX = e.touches[0].clientX; }
-        function hM(e, el) { let d = tX - e.touches[0].clientX; if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`; }
-        function hE(e, el) { let d = tX - e.changedTouches[0].clientX; el.style.transform = d > 70 ? `translateX(-140px)` : `translateX(0)`; }
+      // --- SWIPE GESTURES ---
+      let tX = 0;
+      function hStart(e) {
+        tX = e.touches[0].clientX;
+      }
+      function hMove(e, el) {
+        let d = tX - e.touches[0].clientX;
+        if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`;
+      }
+      function hEnd(e, el) {
+        let d = tX - e.changedTouches[0].clientX;
+        el.style.transform = d > 70 ? `translateX(-140px)` : `translateX(0)`;
+      }
 
-        // CORE ACTIONS
-        function processSale() {
-            let q = parseFloat(buffers.qty) || 0, t = parseFloat(buffers.total) || 0;
-            if(q <= 0 || t <= 0) return;
-            const sale = {
-                id: editId || Date.now(),
-                cat: document.getElementById('selCategory').value,
-                var: document.getElementById('selVariant').value,
-                qty: q, unit: parseFloat(buffers.unit) || 0, total: t,
-                ts: new Date().toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }),
-                rawTs: editId ? (sales.find(x=>x.id===editId).rawTs) : Date.now()
-            };
-            if(editId) sales = sales.map(s => s.id === editId ? sale : s);
-            else sales.unshift(sale);
-            save(); closeLogModal();
-        }
-        function triggerEdit(id) {
-            const s = sales.find(x => x.id === id); if(!s) return;
-            editId = id; openLogModal();
-            document.getElementById('selCategory').value = s.cat; loadVariants();
-            document.getElementById('selVariant').value = s.var;
-            buffers = { qty: s.qty.toString(), unit: s.unit.toString(), total: s.total.toString() };
-            updateDisplays();
-            document.getElementById('mainLogBtn').innerText = "UPDATE RECORD";
-            document.getElementById('mainLogBtn').style.background = "var(--edit)";
-        }
-        function delSale(id) { if(confirm("Delete this sale?")) { sales = sales.filter(x => x.id !== id); save(); } }
+      function triggerEdit(id) {
+        const s = sales.find((x) => x.id === id);
+        if (!s) return;
+        editId = id;
+        openLogModal();
+        document.getElementById("selCategory").value = s.cat;
+        loadVariants();
+        document.getElementById("selVariant").value = s.var;
+        buffers = {
+          qty: s.qty.toString(),
+          unit: s.unit.toString(),
+          total: s.total.toString(),
+        };
+        updateDisplays();
+        document.getElementById("mainLogBtn").innerText = "UPDATE SALE";
+        document.getElementById("mainLogBtn").style.background = "var(--edit)";
+        document.getElementById("mainLogBtn").style.color = "white";
+      }
 
-        // CONFIG & DATA
-        function saveConfig() {
-            const c = document.getElementById('newCat').value; if(!c) return;
-            config[c] = {};
-            document.querySelectorAll('#variantList .vn').forEach((n,i) => {
-                if(n.value) config[c][n.value] = parseFloat(document.querySelectorAll('#variantList .vp')[i].value) || 0;
-            });
-            save(); closeProductModal(); renderManage(); initApp();
-        }
-        function renderManage() {
-            let h = "";
-            for(let c in config) {
-                h += `<div class="row cat-row"><span>${c}</span><button class="num-btn" style="padding:5px 12px; font-size:0.7rem;" onclick="openProductModal('${c}')">Edit</button></div>`;
-                for(let v in config[c]) h += `<div class="row" style="padding-left:30px; font-size:0.8rem; color:var(--sub);"><span>${v}</span><span>$${config[c][v].toFixed(2)}</span></div>`;
-            }
-            document.getElementById('manageList').innerHTML = h;
-        }
-        function addVarRow(v="", p="") {
-            const d = document.createElement('div'); d.style = "display:flex; gap:10px; margin-bottom:10px;";
-            d.innerHTML = `<input class="std-input vn" placeholder="Variety" value="${v}" style="flex:2; margin:0;"><input class="std-input vp" type="number" placeholder="$" value="${p}" style="flex:1; margin:0;">`;
-            document.getElementById('variantList').appendChild(d);
-        }
+      // --- CONFIG & SYSTEM ---
+      function save() {
+        localStorage.setItem("3D_CFG_v21", JSON.stringify(config));
+        localStorage.setItem("3D_SLS_v21", JSON.stringify(sales));
+        render();
+      }
+      function toggleUI(m) {
+        document.getElementById("mainView").className =
+          m === "setup" ? "hidden" : "";
+        document.getElementById("setupUI").className =
+          m === "setup" ? "" : "hidden";
+        if (m === "setup") renderManage();
+      }
+      function initApp() {
+        const cats = Object.keys(config);
+        document.getElementById("selCategory").innerHTML = cats
+          .map((c) => `<option value="${c}">${c}</option>`)
+          .join("");
+        document.getElementById("filterCat").innerHTML =
+          `<option value="All">All Categories</option>` +
+          cats.map((c) => `<option value="${c}">${c}</option>`).join("");
+        loadVariants();
+      }
+      function loadVariants() {
+        const c = document.getElementById("selCategory").value;
+        if (!config[c]) return;
+        document.getElementById("selVariant").innerHTML = Object.keys(config[c])
+          .map((v) => `<option value="${v}">${v}</option>`)
+          .join("");
+        autoFill();
+      }
+      function autoFill() {
+        const c = document.getElementById("selCategory").value,
+          v = document.getElementById("selVariant").value;
+        if (!config[c] || !config[c][v]) return;
+        buffers = {
+          qty: "1",
+          unit: config[c][v].toString(),
+          total: config[c][v].toString(),
+        };
+        updateDisplays();
+      }
 
-        // BACKUP & RESTORE
-        function exportJSON() {
-            const data = { version: "v23", config, sales };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `3d_pro_backup_${Date.now()}.json`;
-            a.click();
-        }
-        function importJSON() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.onchange = e => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    try {
-                        const data = JSON.parse(reader.result);
-                        if(!data.config || !data.sales) throw new Error("Invalid Format");
-                        if(confirm("RESTORE DATA? This will overwrite everything!")) {
-                            config = data.config; sales = data.sales; save(); location.reload();
-                        }
-                    } catch(err) { alert("Error: File is not a valid 3D Sales Pro backup."); }
-                };
-                reader.readAsText(e.target.files[0]);
-            };
-            input.click();
-        }
+      function addVarRow(v = "", p = "") {
+        const d = document.createElement("div");
+        d.style = "display:flex; gap:10px; margin-bottom:12px;";
+        d.innerHTML = `<input class="std-input vn" placeholder="Variety" value="${v}" style="flex:2; margin:0;"><input class="std-input vp" type="number" placeholder="$" value="${p}" style="flex:1; margin:0;">`;
+        document.getElementById("variantList").appendChild(d);
+      }
+      function saveConfig() {
+        const c = document.getElementById("newCat").value;
+        if (!c) return;
+        config[c] = {};
+        document.querySelectorAll(".vn").forEach((n, i) => {
+          if (n.value)
+            config[c][n.value] =
+              parseFloat(document.querySelectorAll(".vp")[i].value) || 0;
+        });
+        save();
+        initApp();
+        toggleUI("tracker");
+      }
+      function renderManage() {
+        document.getElementById("manageList").innerHTML = Object.keys(config)
+          .map(
+            (c) =>
+              `<div class="summary-row"><span>${c}</span><button class="num-btn" style="padding:8px 15px; font-size:0.75rem;" onclick="editCfg('${c}')">Edit</button></div>`
+          )
+          .join("");
+      }
+      function editCfg(c) {
+        document.getElementById("newCat").value = c;
+        document.getElementById("variantList").innerHTML = "";
+        for (let v in config[c]) addVarRow(v, config[c][v]);
+      }
 
-        // GLOBAL UTILS
-        function save() { localStorage.setItem('3D_CFG_v23', JSON.stringify(config)); localStorage.setItem('3D_SLS_v23', JSON.stringify(sales)); render(); }
-        function toggleUI(m) { document.getElementById('mainView').className = m==='setup'?'hidden':''; document.getElementById('setupUI').className = m==='setup'?'':'hidden'; if(m==='setup') renderManage(); }
-        function initApp() {
-            const cats = Object.keys(config);
-            document.getElementById('selCategory').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('filterCat').innerHTML = `<option value="All">All Categories</option>` + cats.map(c => `<option value="${c}">${c}</option>`).join('');
-            loadVariants();
-        }
-        function loadVariants() {
-            const c = document.getElementById('selCategory').value; if(!c) return;
-            document.getElementById('selVariant').innerHTML = Object.keys(config[c]).map(v => `<option value="${v}">${v}</option>`).join('');
-            autoFill();
-        }
-        function autoFill() {
-            const c = document.getElementById('selCategory').value, v = document.getElementById('selVariant').value;
-            if(c && v) { buffers = { qty: "1", unit: config[c][v].toString(), total: config[c][v].toString() }; updateDisplays(); }
-        }
-        function nuke() { if(confirm("PERMANENTLY DELETE ALL DATA?")) { localStorage.clear(); location.reload(); } }
+      // --- BACKUP & RESTORE ---
+      function exportJSON() {
+        const b = new Blob([JSON.stringify({ config, sales }, null, 2)], {
+          type: "application/json",
+        });
+        const now = new Date();
+        const dateStr = `${now.getDate()}-${
+          now.getMonth() + 1
+        }-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(b);
+        a.download = `SeRecord_${dateStr}.json`;
+        a.click();
+      }
+      function importJSON() {
+        const i = document.createElement("input");
+        i.type = "file";
+        i.onchange = (e) => {
+          const r = new FileReader();
+          r.onload = () => {
+            const d = JSON.parse(r.result);
+            config = d.config;
+            sales = d.sales;
+            save();
+            initApp();
+            toggleUI("tracker");
+          };
+          r.readAsText(e.target.files[0]);
+        };
+        i.click();
+      }
 
-        window.onload = () => { initApp(); render(); };
+      window.onload = () => {
+        initApp();
+        render();
+      };
     </script>
-</body>
+  </body>
 </html>
-
