@@ -238,6 +238,64 @@
       .hidden {
         display: none !important;
       }
+
+      #setupUI {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        z-index: 600;
+        display: none;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        overflow-y: auto;
+      }
+
+      #setupUI.open {
+        display: flex;
+      }
+
+      /* The floating popup for the actual entry form */
+      #productEditor {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-height: 80vh;
+        background: var(--card);
+        z-index: 700;
+        padding: 20px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        display: none;
+        flex-direction: column;
+        overflow-y: auto;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      }
+      #productEditor.open {
+        display: flex;
+      }
+      /* Dim the background when the popup is open */
+      /* Only blur the background elements, not the popup itself */
+      #setupUI.dimmed > *:not(#productEditor) {
+        filter: blur(5px);
+        pointer-events: none;
+        opacity: 0.4;
+      }
+      /* Make the product list scrollable so it doesn't push buttons off-screen */
+      #manageList {
+        max-height: 40vh; /* Adjust this to show roughly 3-4 products at a time */
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        background: #111; /* Slightly darker to distinguish the scroll area */
+        margin-bottom: 15px;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling for iPhone */
+      }
     </style>
   </head>
   <body>
@@ -275,8 +333,8 @@
         >
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
-          <option value="high">$$ High</option>
-          <option value="low">$$ Low</option>
+          <option value="high">High to Low</option>
+          <option value="low">Low to High</option>
         </select>
       </div>
 
@@ -350,31 +408,11 @@
 
     <div id="setupUI" class="hidden">
       <h2 style="margin-top: 0">Product Setup</h2>
-      <input
-        class="std-input"
-        id="newCat"
-        placeholder="Category Name (e.g. Plant Pot)"
-      />
-      <div id="variantList"></div>
-      <button
-        class="num-btn"
-        style="width: 100%; margin-bottom: 12px; font-size: 1rem"
-        onclick="addVarRow()"
-      >
-        + Add Variety
-      </button>
-      <button
-        class="log-btn"
-        onclick="saveConfig()"
-        style="background: var(--edit); color: white"
-      >
-        SAVE PRODUCT
-      </button>
 
       <div
         class="section-title"
         style="
-          margin: 30px 0 10px;
+          margin: 10px 0;
           color: var(--sub);
           font-size: 0.8rem;
           font-weight: bold;
@@ -382,44 +420,92 @@
       >
         MANAGE PRODUCTS
       </div>
+
       <div id="manageList" class="list-container"></div>
 
-      <div
-        style="
-          background: var(--card);
-          padding: 20px;
-          border-radius: 18px;
-          margin-top: 20px;
-          border: 1px solid var(--border);
-        "
-      >
+      <div class="setup-actions">
         <button
-          class="num-btn"
-          style="
-            width: 100%;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-            background: #444;
-          "
-          onclick="exportJSON()"
+          class="log-btn"
+          onclick="openProductEditor()"
+          style="margin-bottom: 20px; background: var(--accent); color: black"
         >
-          Backup JSON
+          + NEW PRODUCT
         </button>
-        <button
-          class="num-btn"
-          style="width: 100%; font-size: 0.9rem; background: #444"
-          onclick="importJSON()"
+
+        <div
+          style="
+            background: var(--card);
+            padding: 20px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+          "
         >
-          Restore JSON
+          <button
+            class="num-btn"
+            style="
+              width: 100%;
+              font-size: 0.9rem;
+              margin-bottom: 12px;
+              background: #444;
+            "
+            onclick="exportJSON()"
+          >
+            Backup JSON
+          </button>
+          <button
+            class="num-btn"
+            style="width: 100%; font-size: 0.9rem; background: #444"
+            onclick="importJSON()"
+          >
+            Restore JSON
+          </button>
+        </div>
+
+        <button
+          class="log-btn"
+          style="background: #2c2c2e; color: #fff; margin-top: 20px"
+          onclick="toggleUI('tracker')"
+        >
+          BACK TO SALES
         </button>
       </div>
-      <button
-        class="log-btn"
-        style="background: #2c2c2e; color: #fff; margin-top: 20px"
-        onclick="toggleUI('tracker')"
-      >
-        BACK TO SALES
-      </button>
+
+      <div id="productEditor" class="hidden">
+        <div class="modal-header">
+          <h3 id="editTitle" style="margin: 0">Product Details</h3>
+          <button
+            onclick="closeProductEditor()"
+            style="
+              background: none;
+              border: none;
+              color: var(--danger);
+              font-size: 1.8rem;
+            "
+          >
+            ✕
+          </button>
+        </div>
+        <input
+          class="std-input"
+          id="newCat"
+          placeholder="Category Name (e.g. Plant Pot)"
+        />
+        <div id="variantList"></div>
+        <button
+          class="num-btn"
+          style="width: 100%; margin-bottom: 12px; font-size: 1rem"
+          onclick="addVarRow()"
+        >
+          + Add Variety
+        </button>
+        <button
+          class="log-btn"
+          onclick="saveConfig()"
+          style="background: var(--edit); color: white"
+        >
+          SAVE PRODUCT
+        </button>
+      </div>
     </div>
 
     <script>
@@ -431,6 +517,7 @@
       let activeField = "qty",
         buffers = { qty: "1", unit: "0", total: "0" },
         editId = null;
+      isFirstKey = true;
 
       function openLogModal() {
         document.getElementById("logModal").classList.add("open");
@@ -449,6 +536,7 @@
       // --- BUFFER & NUMPAD LOGIC ---
       function setActiveField(f) {
         activeField = f;
+        isFirstKey = true;
         document
           .querySelectorAll(".input-box")
           .forEach((b) => b.classList.remove("active"));
@@ -458,20 +546,20 @@
       function press(n) {
         if (n === "C") {
           buffers[activeField] = activeField === "qty" ? "1" : "0";
+          isFirstKey = true;
         } else {
-          if (
-            buffers[activeField] === "0" ||
-            (buffers[activeField] === "1" &&
-              activeField === "qty" &&
-              buffers.qty.length === 1)
-          ) {
-            buffers[activeField] = n;
+          // NEW Logic: Overwrite if it's the first key, otherwise append
+          if (isFirstKey) {
+            if (n === ".") buffers[activeField] = "0.";
+            else buffers[activeField] = n;
+            isFirstKey = false; // Next key in the same field will append
           } else {
             if (n === "." && buffers[activeField].includes(".")) return;
             buffers[activeField] += n;
           }
         }
 
+        // Keep your existing calculation logic below
         let q = parseFloat(buffers.qty) || 0,
           u = parseFloat(buffers.unit) || 0,
           t = parseFloat(buffers.total) || 0;
@@ -627,11 +715,15 @@
         render();
       }
       function toggleUI(m) {
-        document.getElementById("mainView").className =
-          m === "setup" ? "hidden" : "";
-        document.getElementById("setupUI").className =
-          m === "setup" ? "" : "hidden";
-        if (m === "setup") renderManage();
+        const setup = document.getElementById("setupUI");
+        if (m === "setup") {
+          setup.classList.add("open");
+          setup.classList.remove("hidden");
+          renderManage();
+        } else {
+          setup.classList.remove("open");
+          setup.classList.add("hidden");
+        }
       }
       function initApp() {
         const cats = Object.keys(config);
@@ -690,10 +782,59 @@
           )
           .join("");
       }
-      function editCfg(c) {
-        document.getElementById("newCat").value = c;
+      function openProductEditor(catName = "") {
+        const editor = document.getElementById("productEditor");
+        const setupPage = document.getElementById("setupUI");
+
+        document.getElementById("newCat").value = catName;
         document.getElementById("variantList").innerHTML = "";
-        for (let v in config[c]) addVarRow(v, config[c][v]);
+        document.getElementById("editTitle").innerText = catName
+          ? "Edit Product"
+          : "Add Product";
+
+        if (catName) {
+          // Loads existing 3D print data into the popup rows
+          for (let v in config[catName]) addVarRow(v, config[catName][v]);
+        } else {
+          addVarRow(); // Fresh row for new item
+        }
+
+        editor.classList.remove("hidden");
+        editor.classList.add("open");
+        setupPage.classList.add("dimmed"); // Applies the blur/dim effect
+      }
+
+      function closeProductEditor() {
+        const editor = document.getElementById("productEditor");
+        const setupPage = document.getElementById("setupUI");
+        editor.classList.add("hidden");
+        editor.classList.remove("open");
+        setupPage.classList.remove("dimmed");
+      }
+
+      // Override your old editCfg to use the popup instead
+      function editCfg(c) {
+        openProductEditor(c);
+      }
+
+      // Update saveConfig to close the popup automatically
+      function saveConfig() {
+        const c = document.getElementById("newCat").value;
+        if (!c) return;
+
+        // Reset the specific category to rebuild from popup inputs
+        config[c] = {};
+        document.querySelectorAll(".vn").forEach((n, i) => {
+          if (n.value) {
+            config[c][n.value] =
+              parseFloat(document.querySelectorAll(".vp")[i].value) || 0;
+          }
+        });
+
+        save();
+        initApp();
+        closeProductEditor(); // Close the popup
+        renderManage(); // Refresh the list in the background
       }
 
       // --- BACKUP & RESTORE ---
