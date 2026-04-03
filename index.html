@@ -34,18 +34,57 @@
         overflow-x: hidden;
       }
 
+      /* Clean Revenue Card */
       .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-top: 10px;
+        padding: 18px 22px;
+        background: var(--card);
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        margin-top: 5px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       }
+
+      .revenue-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .revenue-label {
+        color: var(--sub);
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+      }
+
       .grand-total-val {
         font-size: 2.2rem;
-        font-weight: 800;
+        font-weight: 900;
         color: var(--accent);
-        letter-spacing: -1px;
+        letter-spacing: -1.5px;
+        line-height: 1;
+      }
+
+      .settings-btn {
+        width: 48px;
+        height: 48px;
+        background: rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        transition: transform 0.1s;
+      }
+
+      .settings-btn:active {
+        transform: scale(0.9);
       }
 
       /* Floating Action Button */
@@ -378,28 +417,12 @@
   <body>
     <div id="mainView">
       <div class="header">
-        <div>
-          <div style="color: var(--sub); font-size: 0.75rem; font-weight: 600">
-            NET REVENUE
-          </div>
+        <div class="revenue-info">
+          <div class="revenue-label">NET REVENUE</div>
           <div class="grand-total-val">$<span id="grandTotal">0.00</span></div>
         </div>
-        <button
-          class="num-btn"
-          style="
-            width: 50px;
-            height: 50px;
-            padding: 0;
-            font-size: 2rem;
-            background: #2d446d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-          onclick="toggleUI('setup')"
-        >
-          ⚙️
-        </button>
+
+        <button class="settings-btn" onclick="toggleUI('setup')">⚙️</button>
       </div>
 
       <div id="section-breakdown">
@@ -748,7 +771,7 @@
         });
         document.getElementById("grandTotal").innerText = grand.toLocaleString(
           undefined,
-          { minimumFractionDigits: 2 }
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
         );
 
         // Summary Section
