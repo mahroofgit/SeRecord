@@ -28,6 +28,8 @@
         padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom);
         user-select: none;
         -webkit-tap-highlight-color: transparent;
+        height: 100vh;
+        overflow-x: hidden;
       }
 
       .header {
@@ -145,6 +147,7 @@
         font-size: 1.3rem;
         font-weight: 800;
         margin-top: 10px;
+        min-height: 65px; /* Ensures buttons don't collapse */
       }
 
       /* Summary Styling */
@@ -230,9 +233,19 @@
         border-radius: 15px;
         font-size: 1.6rem;
         font-weight: 700;
+        min-height: 50px; /* Fixes the thin line issue */
       }
-      .num-btn:active {
-        background: #3a3a3c;
+
+      .header .num-btn {
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        padding: 10px;
+      }
+
+      .header .num-btn:active {
+        background: #3a3a3c !important;
+        transform: scale(0.92);
       }
 
       .hidden {
@@ -259,7 +272,24 @@
         display: flex;
       }
 
-      /* The floating popup for the actual entry form */
+      /* Scroll area for products */
+      #manageList {
+        flex-grow: 1;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        background: #111;
+        margin-bottom: 15px;
+        border-radius: 16px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Sticky actions at the bottom */
+      .setup-actions {
+        margin-top: auto;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* The floating popup */
       #productEditor {
         position: fixed;
         top: 50%;
@@ -309,10 +339,19 @@
         </div>
         <button
           class="num-btn"
-          style="padding: 10px 20px; font-size: 0.9rem"
+          style="
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            font-size: 1.8rem;
+            background: #2c2c2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          "
           onclick="toggleUI('setup')"
         >
-          Setup
+          ⚙️
         </button>
       </div>
 
