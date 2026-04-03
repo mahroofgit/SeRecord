@@ -10,9 +10,9 @@
     <style>
       /* UI THEME: Deep Dark & Clean */
       :root {
-        --bg: #000000;
-        --card: #1c1c1e;
-        --accent: #32d74b;
+        --bg: #23272d;
+        --card: #24242a;
+        --accent: #5ca068;
         --text: #ffffff;
         --sub: #8e8e93;
         --border: #333333;
@@ -326,6 +326,51 @@
         margin-bottom: 15px;
         -webkit-overflow-scrolling: touch; /* Smooth scrolling for iPhone */
       }
+      /* Bottom Tab Bar */
+      .tab-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 75px;
+        background: rgba(28, 28, 30, 0.95);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        border-top: 1px solid var(--border);
+        padding-bottom: env(safe-area-inset-bottom); /* iOS Handle support */
+        z-index: 100;
+      }
+
+      .tab-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: var(--sub);
+        font-size: 0.7rem;
+        font-weight: 600;
+        transition: 0.2s;
+      }
+
+      .tab-item.active {
+        color: var(--accent); /* Your 3D printing brand green */
+      }
+
+      .tab-icon {
+        font-size: 1.4rem;
+        margin-bottom: 4px;
+      }
+
+      /* Adjust FAB so it doesn't overlap the new bar */
+      .fab {
+        bottom: 95px !important; /* Move above the tab bar */
+      }
+
+      /* Adjust body padding so list content isn't hidden behind the bar */
+      body {
+        padding-bottom: 100px;
+      }
     </style>
   </head>
   <body>
@@ -343,7 +388,7 @@
             width: 50px;
             height: 50px;
             padding: 0;
-            font-size: 1.8rem;
+            font-size: 2rem;
             background: #2c2c2e;
             display: flex;
             align-items: center;
@@ -355,29 +400,50 @@
         </button>
       </div>
 
-      <div id="summaryArea" class="list-container"></div>
-
-      <div style="display: flex; gap: 10px; margin-bottom: 15px">
-        <select
-          class="std-select"
-          id="filterCat"
-          onchange="render()"
-          style="flex: 1.5; padding: 10px; font-size: 0.85rem; margin-bottom: 0"
-        ></select>
-        <select
-          class="std-select"
-          id="sortMode"
-          onchange="render()"
-          style="flex: 1; padding: 10px; font-size: 0.85rem; margin-bottom: 0"
-        >
-          <option value="newest">Newest</option>
-          <option value="oldest">Oldest</option>
-          <option value="high">High to Low</option>
-          <option value="low">Low to High</option>
-        </select>
+      <div id="section-breakdown">
+        <div id="summaryArea" class="list-container"></div>
       </div>
 
-      <div id="historyLog" class="list-container"></div>
+      <div id="section-history" class="hidden">
+        <div
+          style="display: flex; gap: 10px; margin-bottom: 15px; padding: 0 5px"
+        >
+          <select
+            class="std-select"
+            id="filterCat"
+            onchange="render()"
+            style="flex: 1.5; margin-bottom: 0"
+          ></select>
+          <select
+            class="std-select"
+            id="sortMode"
+            onchange="render()"
+            style="flex: 1; margin-bottom: 0"
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="high">High to Low</option>
+            <option value="low">Low to High</option>
+          </select>
+        </div>
+        <div id="historyLog" class="list-container"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div
+          id="tab-breakdown"
+          class="tab-item active"
+          onclick="switchTab('breakdown')"
+        >
+          <div class="tab-icon">📊</div>
+          <span>Dashboard</span>
+        </div>
+        <div id="tab-history" class="tab-item" onclick="switchTab('history')">
+          <div class="tab-icon">📜</div>
+          <span>Sales Log</span>
+        </div>
+      </div>
+
       <button class="fab" onclick="openLogModal()">+</button>
     </div>
 
@@ -614,6 +680,27 @@
         document.getElementById("disp-qty").innerText = buffers.qty;
         document.getElementById("disp-unit").innerText = buffers.unit;
         document.getElementById("disp-total").innerText = buffers.total;
+      }
+
+      function switchTab(tab) {
+        // Update Tab UI
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        document.getElementById(`tab-${tab}`).classList.add("active");
+
+        // Toggle Visibility
+        if (tab === "breakdown") {
+          document
+            .getElementById("section-breakdown")
+            .classList.remove("hidden");
+          document.getElementById("section-history").classList.add("hidden");
+        } else {
+          document.getElementById("section-breakdown").classList.add("hidden");
+          document.getElementById("section-history").classList.remove("hidden");
+        }
+
+        render(); // Refresh lists
       }
 
       // --- DATA PROCESSING ---
