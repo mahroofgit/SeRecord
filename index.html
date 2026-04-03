@@ -9,15 +9,17 @@
     <title>SeRecorder Pro v26</title>
     <style>
       /* UI THEME: Deep Dark & Clean */
+      /* UI THEME: Midnight Forest - Calm & Professional */
       :root {
-        --bg: #23272d;
-        --card: #24242a;
-        --accent: #5ca068;
-        --text: #ffffff;
-        --sub: #8e8e93;
-        --border: #333333;
-        --danger: #ff453a;
-        --edit: #0a84ff;
+        --bg: #09132a; /* Deep Midnight */
+        --card: #1d2c45; /* Slate Blue */
+        --accent: #86efac; /* Sage Accent */
+        --text: #f1f5f9; /* Soft White */
+        --sub: #94a3b8; /* Muted Slate */
+        --border: #334155; /* Subtle Deep Blue Border */
+        --danger: #fda4af; /* Muted Rose */
+        --edit: #7dd3fc; /* Sky Blue */
+        --row-alt: #162033; /* Darker Blue for nested rows */
       }
 
       body {
@@ -166,7 +168,7 @@
         align-items: center;
       }
       .cat-row {
-        background: #2c2c2e;
+        background: #0f213f;
         font-weight: bold;
         border-left: 4px solid var(--accent);
       }
@@ -389,7 +391,7 @@
             height: 50px;
             padding: 0;
             font-size: 2rem;
-            background: #2c2c2e;
+            background: #2d446d;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -750,7 +752,7 @@
         );
 
         // Summary Section
-        let sumH = `<div class="summary-row" style="background:#2c2c2e; font-size:0.65rem; border-bottom:2px solid #000;"><span style="color:var(--sub)">CATEGORY BREAKDOWN</span><span style="color:var(--sub)">QTY | TOTAL</span></div>`;
+        let sumH = `<div class="summary-row" style="background:#1d3c84; font-size:0.65rem; border-bottom:2px solid #000;"><span style="color:var(--sub)">CATEGORY BREAKDOWN</span><span style="color:var(--sub)">QTY | TOTAL</span></div>`;
         for (let c in grouped) {
           sumH += `<div class="summary-row cat-row"><span>${c} <span class="net-badge">${
             grouped[c].qty
