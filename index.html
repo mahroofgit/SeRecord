@@ -366,15 +366,17 @@
         top: 0;
         left: 0;
         width: 100%;
-        height: 100%;
+        height: 100vh;
         background: var(--bg);
         z-index: 600;
         display: none;
         flex-direction: column;
-        padding: 20px;
-        box-sizing: border-box;
+        padding: 12px 15px;
+        gap: 8px;
         padding-top: env(safe-area-inset-top);
-        overflow-y: auto;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-sizing: border-box;
+        overflow: hidden;
       }
 
       #setupUI.open {
@@ -384,13 +386,14 @@
       /* --- CONSOLIDATED MANAGE PRODUCTS LIST --- */
       #manageList {
         flex-grow: 1;
-        max-height: 45vh; /* Prevents pushing action buttons off-screen */
+        flex-shrink: 1;
+        max-height: 70vh; /* Prevents pushing action buttons off-screen */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         background: rgba(0, 0, 0, 0.2); /* Deep inset look */
         border: 1px solid var(--border);
         border-radius: 16px;
-        margin-bottom: 20px;
+        margin-bottom: 15x;
       }
 
       /* Individual Swipe Rows */
@@ -427,6 +430,9 @@
         width: 140px; /* This is the max distance you should allow swiping */
         display: flex;
         z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
 
       /* Product Name Text */
@@ -450,6 +456,53 @@
         border: 1px solid rgba(134, 239, 172, 0.2);
       }
 
+      /* Compact Button Layouts */
+      .setup-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .compact-log-btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        border: none;
+      }
+
+      .json-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 10px;
+        background: var(--card);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .secondary-btn {
+        background: #3a3a3c;
+        color: white;
+        border: none;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .back-btn {
+        margin-top: 0 !important;
+        background: #2c2c2e;
+        color: #fff;
+        width: 100%;
+        padding: 12px !important;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        font-weight: 700;
+        font-size: 0.8rem;
+      }
       /* The floating popup */
       #productEditor {
         position: fixed;
@@ -477,6 +530,48 @@
         filter: blur(5px);
         pointer-events: none;
         opacity: 0.4;
+      }
+
+      /* Compact +NEW PRODUCT button */
+      #setupUI .log-btn {
+        padding: 12px; /* Reduced from 20px */
+        font-size: 1rem; /* Slightly smaller text */
+        min-height: 45px;
+        margin-top: 0;
+      }
+
+      /* Compact JSON/Back Buttons */
+      .json-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: rgba(29, 44, 69, 0.4);
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .secondary-btn {
+        background: #334155;
+        color: var(--text);
+        border: none;
+        padding: 10px; /* Compact padding */
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      /* Full width Back button */
+      .back-btn {
+        background: #1e293b;
+        color: var(--sub);
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-weight: 700;
+        margin-top: 5px;
       }
 
       /* Bottom Tab Bar */
@@ -649,15 +744,16 @@
     </div>
 
     <div id="setupUI" class="hidden">
-      <h2 style="margin-top: 0">Product Setup</h2>
+      <h2 style="margin: 0 0 10px 0">Product Setup</h2>
 
       <div
         class="section-title"
         style="
           color: var(--sub);
-          font-size: 0.8rem;
+          font-size: 0.7rem;
           font-weight: bold;
-          padding-left: 4px;
+          letter-spacing: 1px;
+          margin-bottom: 5px;
         "
       >
         MANAGE PRODUCTS
@@ -665,49 +761,25 @@
 
       <div id="manageList" class="list-container"></div>
 
-      <div class="setup-actions">
+      <div class="setup-footer">
         <button
-          class="log-btn"
+          class="compact-log-btn"
           onclick="openProductEditor()"
-          style="margin-bottom: 10px; background: var(--accent); color: black"
+          style="background: var(--accent); color: black"
         >
           + NEW PRODUCT
         </button>
 
-        <div
-          style="
-            background: var(--card);
-            padding: 20px;
-            border-radius: 18px;
-            border: 1px solid var(--border);
-          "
-        >
-          <button
-            class="num-btn"
-            style="
-              width: 100%;
-              font-size: 0.9rem;
-              margin-bottom: 12px;
-              background: #444;
-            "
-            onclick="exportJSON()"
-          >
+        <div class="json-grid">
+          <button class="secondary-btn" onclick="exportJSON()">
             Backup JSON
           </button>
-          <button
-            class="num-btn"
-            style="width: 100%; font-size: 0.9rem; background: #444"
-            onclick="importJSON()"
-          >
+          <button class="secondary-btn" onclick="importJSON()">
             Restore JSON
           </button>
         </div>
 
-        <button
-          class="log-btn"
-          style="background: #2c2c2e; color: #fff; margin-top: 20px"
-          onclick="toggleUI('tracker')"
-        >
+        <button class="back-btn" onclick="toggleUI('tracker')">
           BACK TO SALES
         </button>
       </div>
