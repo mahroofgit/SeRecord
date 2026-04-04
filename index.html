@@ -381,21 +381,73 @@
         display: flex;
       }
 
-      /* Scroll area for products */
+      /* --- CONSOLIDATED MANAGE PRODUCTS LIST --- */
       #manageList {
         flex-grow: 1;
+        max-height: 45vh; /* Prevents pushing action buttons off-screen */
         overflow-y: auto;
-        border: 1px solid var(--border);
-        background: #111;
-        margin-bottom: 15px;
-        border-radius: 16px;
         -webkit-overflow-scrolling: touch;
+        background: rgba(0, 0, 0, 0.2); /* Deep inset look */
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 20px;
       }
 
-      /* Sticky actions at the bottom */
-      .setup-actions {
-        margin-top: auto;
-        padding-bottom: env(safe-area-inset-bottom);
+      /* Individual Swipe Rows */
+      #manageList .swipe-item {
+        position: relative;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      /* Subtle Zebra Striping for High-Density scannability */
+      #manageList .swipe-item:nth-child(even) .swipe-content {
+        background: #162033; /* Matches your --row-alt or slightly lighter */
+      }
+
+      /* Row Content Layout */
+      #manageList .swipe-content {
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        /* CHANGE: Use var(--card) or var(--bg) instead of transparent */
+        background: var(--card);
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .swipe-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 140px; /* This is the max distance you should allow swiping */
+        display: flex;
+        z-index: 1;
+      }
+
+      /* Product Name Text */
+      .manage-name {
+        font-weight: 700;
+        color: var(--text);
+        font-size: 1rem;
+        letter-spacing: -0.3px;
+      }
+
+      /* Variety Count Badge */
+      .manage-meta {
+        font-family: "SF Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--accent);
+        background: rgba(134, 239, 172, 0.1);
+        padding: 3px 10px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        font-weight: 800;
+        border: 1px solid rgba(134, 239, 172, 0.2);
       }
 
       /* The floating popup */
@@ -426,15 +478,7 @@
         pointer-events: none;
         opacity: 0.4;
       }
-      /* Make the product list scrollable so it doesn't push buttons off-screen */
-      #manageList {
-        max-height: 40vh; /* Adjust this to show roughly 3-4 products at a time */
-        overflow-y: auto;
-        border: 1px solid var(--border);
-        background: #111; /* Slightly darker to distinguish the scroll area */
-        margin-bottom: 15px;
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling for iPhone */
-      }
+
       /* Bottom Tab Bar */
       .tab-bar {
         position: fixed;
@@ -610,10 +654,10 @@
       <div
         class="section-title"
         style="
-          margin: 10px 0;
           color: var(--sub);
           font-size: 0.8rem;
           font-weight: bold;
+          padding-left: 4px;
         "
       >
         MANAGE PRODUCTS
@@ -625,7 +669,7 @@
         <button
           class="log-btn"
           onclick="openProductEditor()"
-          style="margin-bottom: 20px; background: var(--accent); color: black"
+          style="margin-bottom: 10px; background: var(--accent); color: black"
         >
           + NEW PRODUCT
         </button>
@@ -707,6 +751,7 @@
     </div>
 
     <script>
+      let editingCategoryName = null;
       // Core Storage Keys
       let config = JSON.parse(localStorage.getItem("3D_CFG_v21")) || {
         Sample: { Standard: 10.0 },
@@ -1010,12 +1055,25 @@
       function renderManage() {
         document.getElementById("manageList").innerHTML = Object.keys(config)
           .map(
-            (c) =>
-              `<div class="summary-row"><span>${c}</span><button class="num-btn" style="padding:8px 15px; font-size:0.75rem;" onclick="editCfg('${c}')">Edit</button></div>`
+            (c) => `
+        <div class="swipe-item">
+            <div class="swipe-actions">
+                <div class="action-btn" style="background:var(--edit)" onclick="editCfg('${c}')">Edit</div>
+                <div class="action-btn" style="background:var(--danger)" onclick="deleteCfg('${c}')">Del</div>
+            </div>
+            <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
+                <span style="font-weight:600;">${c}</span>
+                <span style="color:var(--sub); font-size:0.8rem;">${
+                  Object.keys(config[c]).length
+                } Varieties</span>
+            </div>
+        </div>
+      `
           )
           .join("");
       }
       function openProductEditor(catName = "") {
+        editingCategoryName = catName; // Track the name before the user changes it
         const editor = document.getElementById("productEditor");
         const setupPage = document.getElementById("setupUI");
 
@@ -1052,22 +1110,40 @@
 
       // Update saveConfig to close the popup automatically
       function saveConfig() {
-        const c = document.getElementById("newCat").value;
-        if (!c) return;
+        const newName = document.getElementById("newCat").value;
+        if (!newName) return;
 
-        // Reset the specific category to rebuild from popup inputs
-        config[c] = {};
+        // If we renamed the product, delete the old key first
+        if (editingCategoryName && editingCategoryName !== newName) {
+          delete config[editingCategoryName];
+        }
+
+        config[newName] = {}; // Create/Update the key
         document.querySelectorAll(".vn").forEach((n, i) => {
           if (n.value) {
-            config[c][n.value] =
+            config[newName][n.value] =
               parseFloat(document.querySelectorAll(".vp")[i].value) || 0;
           }
         });
 
+        editingCategoryName = null; // Reset tracker
         save();
         initApp();
-        closeProductEditor(); // Close the popup
-        renderManage(); // Refresh the list in the background
+        closeProductEditor();
+        renderManage();
+      }
+
+      function deleteCfg(c) {
+        if (
+          confirm(
+            `Delete ALL data for ${c}? This won't delete past sales, but will remove it from the menu.`
+          )
+        ) {
+          delete config[c];
+          save();
+          initApp();
+          renderManage();
+        }
       }
 
       // --- BACKUP & RESTORE ---
