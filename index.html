@@ -191,34 +191,67 @@
         min-height: 65px; /* Ensures buttons don't collapse */
       }
 
-      /* Summary Styling */
+      /* Modernized List Container */
       .list-container {
-        background: var(--card);
-        border-radius: 16px;
-        overflow: hidden;
+        background: rgba(29, 44, 69, 0.4);
+        border-radius: 24px;
         border: 1px solid var(--border);
-        margin-bottom: 20px;
+        margin-top: 10px;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
       }
+
+      .list-header-label,
       .summary-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 15px;
-        border-bottom: 1px solid #2c2c2e;
+        display: grid !important;
+        /* This gives the product name 50% of the screen and keeps data tight */
+        grid-template-columns: 1.5fr 60px 90px;
+        justify-content: start; /* Pulls everything to the left */
+        gap: 10px; /* Adds a controlled gap between columns */
         align-items: center;
+        padding: 10px 15px;
+        border-bottom: 1px solid var(--border);
+        min-height: 20px; /* Slightly taller for better touch targets */
       }
+
+      /* --- UPDATED: Category vs Variety Styling --- */
       .cat-row {
-        background: #0f213f;
-        font-weight: bold;
-        border-left: 4px solid var(--accent);
-      }
-      .net-badge {
-        background: #444;
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 2px solid var(--accent) !important; /* Thick bar for categories */
+        font-weight: 800;
         color: #fff;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-size: 0.7rem;
-        margin-left: 8px;
-        font-weight: 600;
+        min-height: 28px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+      }
+
+      .variety-row {
+        background: transparent;
+        color: var(--sub);
+        font-size: 0.85rem; /* Smaller font for sub-items */
+        min-height: 18px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+      }
+
+      .variety-row .col-product {
+        padding-left: 28px !important; /* Stronger indentation for nesting */
+        font-size: 0.8rem;
+      }
+
+      .variety-row .col-count,
+      .variety-row .col-price {
+        color: var(--sub); /* Muted data for sub-items */
+        font-size: 0.85rem;
+        opacity: 0.7;
+        font-weight: 500;
+      }
+
+      .list-header-label span:nth-child(2) {
+        text-align: center;
+      }
+      .list-header-label span:nth-child(3) {
+        text-align: right;
       }
 
       /* Swipe items */
@@ -775,23 +808,39 @@
         );
 
         // Summary Section
-        let sumH = `<div class="summary-row" style="background:#1d3c84; font-size:0.65rem; border-bottom:2px solid #000;"><span style="color:var(--sub)">CATEGORY BREAKDOWN</span><span style="color:var(--sub)">QTY | TOTAL</span></div>`;
+        let innerContent = `
+  <div class="list-header-label">
+    <span>PRODUCT</span>
+    <span>COUNT</span>
+    <span>REVENUE</span>
+  </div>`;
+
         for (let c in grouped) {
-          sumH += `<div class="summary-row cat-row"><span>${c} <span class="net-badge">${
-            grouped[c].qty
-          }</span></span><span>$${grouped[c].total.toFixed(2)}</span></div>`;
+          // 1. Render Category Row
+          innerContent += `
+    <div class="summary-row cat-row">
+      <span class="col-product">${c}</span>
+      <span class="col-count">${grouped[c].qty}</span>
+      <span class="col-price">$${grouped[c].total.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}</span>
+    </div>`;
+
+          // 2. Render Sub-category (Variety) Rows
           for (let v in grouped[c].vars) {
-            sumH += `<div class="summary-row" style="padding-left:35px; font-size:0.9rem; color:var(--sub);"><span>${v} <span class="net-badge" style="background:#333">${
-              grouped[c].vars[v].qty
-            }</span></span><span>$${grouped[c].vars[v].total.toFixed(
-              2
-            )}</span></div>`;
+            innerContent += `
+      <div class="summary-row variety-row">
+        <span class="col-product">${v}</span>
+        <span class="col-count">${grouped[c].vars[v].qty}</span>
+        <span class="col-price">$${grouped[c].vars[v].total.toFixed(2)}</span>
+      </div>`;
           }
         }
-        document.getElementById("summaryArea").innerHTML =
-          sumH ||
-          '<div style="padding:20px; text-align:center; color:var(--sub)">No sales logged.</div>';
 
+        document.getElementById("summaryArea").innerHTML = `
+          <div class="list-container">${innerContent}</div>
+        `;
         // History Log
         let list = f === "All" ? [...sales] : sales.filter((x) => x.cat === f);
         if (sMode === "high") list.sort((a, b) => b.total - a.total);
