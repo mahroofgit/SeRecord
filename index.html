@@ -23,13 +23,13 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
         background: var(--bg);
         color: var(--text);
         margin: 0;
         padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom);
         user-select: none;
-        -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
         height: 100vh;
         overflow-x: hidden;
       }
@@ -39,7 +39,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 22px;
+        padding: 8px 22px;
         background: var(--card);
         border-radius: 24px;
         border: 1px solid var(--border);
@@ -63,7 +63,7 @@
       }
 
       .grand-total-val {
-        font-size: 2.2rem;
+        font-size: 1.5rem;
         font-weight: 900;
         color: var(--accent);
         letter-spacing: -1.5px;
@@ -75,11 +75,11 @@
         height: 48px;
         background: rgba(0, 0, 0, 0.2) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 15px;
+        border-radius: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 2rem;
         transition: transform 0.1s;
       }
 
@@ -201,7 +201,37 @@
         backdrop-filter: blur(10px);
       }
 
-      .list-header-label,
+      .list-header-label {
+        display: grid !important;
+        /* MUST match your .summary-row columns exactly */
+        grid-template-columns: 1.5fr 60px 90px;
+        gap: 10px;
+        padding: 8px 15px;
+        background: rgba(28, 68, 96, 0.601);
+        border-bottom: 2px solid var(--border) !important;
+        align-items: center;
+      }
+
+      .list-header-label span {
+        color: var(--sub);
+        font-size: 0.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1.5px; /* This fixes the "clumped" look */
+      }
+      .list-header-label span:nth-child(1) {
+        text-align: left;
+      }
+      /* Ensure the labels align with the data below */
+      .list-header-label span:nth-child(2) {
+        text-align: left;
+        width: 20px; /* Forces it to occupy the full track width */
+      }
+      .list-header-label span:nth-child(3) {
+        text-align: right;
+        width: 30px; /* Forces it to occupy the full track width */
+      }
+
       .summary-row {
         display: grid !important;
         /* This gives the product name 50% of the screen and keeps data tight */
@@ -216,13 +246,14 @@
 
       /* --- UPDATED: Category vs Variety Styling --- */
       .cat-row {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.05) !important;
         border-left: 2px solid var(--accent) !important; /* Thick bar for categories */
-        font-weight: 800;
-        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text) !important;
         min-height: 28px;
-        padding-top: 4px;
-        padding-bottom: 4px;
+        padding-top: 0.5px;
+        padding-bottom: 0.5px;
       }
 
       .variety-row {
@@ -235,15 +266,19 @@
       }
 
       .variety-row .col-product {
+        color: #cbd5e1 !important;
+        font-weight: 600;
+        letter-spacing: -0.2px;
         padding-left: 28px !important; /* Stronger indentation for nesting */
         font-size: 0.8rem;
       }
 
       .variety-row .col-count,
       .variety-row .col-price {
-        color: var(--sub); /* Muted data for sub-items */
-        font-size: 0.85rem;
+        color: var(--sub) !important; /* Muted data for sub-items */
+        font-size: 0.75rem;
         opacity: 0.7;
+        font-family: "SF Mono", "Roboto Mono", monospace;
         font-weight: 500;
       }
 
@@ -838,9 +873,7 @@
           }
         }
 
-        document.getElementById("summaryArea").innerHTML = `
-          <div class="list-container">${innerContent}</div>
-        `;
+        document.getElementById("summaryArea").innerHTML = innerContent;
         // History Log
         let list = f === "All" ? [...sales] : sales.filter((x) => x.cat === f);
         if (sMode === "high") list.sort((a, b) => b.total - a.total);
