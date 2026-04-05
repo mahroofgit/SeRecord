@@ -90,7 +90,7 @@
       /* Floating Action Button */
       .fab {
         position: fixed;
-        bottom: 150px !important;
+        bottom: calc(100px + env(safe-area-inset-bottom)) !important;
         right: 25px;
         width: 65px;
         height: 65px;
@@ -102,7 +102,7 @@
         font-size: 2.2rem;
         color: #000;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-        z-index: 90;
+        z-index: 500;
         border: none;
         font-weight: bold;
       }
@@ -1001,23 +1001,34 @@
         else list.sort((a, b) => b.rawTs - a.rawTs);
 
         document.getElementById("historyLog").innerHTML = list
-  .map(
-    (s) => `
+          .map(
+            (s) => `
 <div class="swipe-item">
     <div class="swipe-actions">
-        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${s.id})">EDIT</div>
-        <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${s.id})">DEL</div>
+        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${
+          s.id
+        })">EDIT</div>
+        <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${
+          s.id
+        })">DEL</div>
     </div>
     <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
         <div style="display:flex; flex-direction:column; gap:2px;">
-          <span style="font-weight:700; font-size:0.95rem;">${s.qty}x ${s.var}</span>
-          <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">${s.cat} • ${s.ts}</span>
+          <span style="font-weight:700; font-size:0.95rem;">${s.qty}x ${
+              s.var
+            }</span>
+          <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">${
+            s.cat
+          } • ${s.ts}</span>
         </div>
-        <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(2)}</span>
+        <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(
+          2
+        )}</span>
     </div>
 </div>`
-  ).join("");
-}
+          )
+          .join("");
+      }
 
       // --- SWIPE GESTURES ---
       let tX = 0;
@@ -1028,17 +1039,18 @@
         let d = tX - e.touches[0].clientX;
         if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`;
       }
- function hEnd(e, el) {
-  el.style.transition = "transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)";
-  let d = tX - e.changedTouches[0].clientX;
-  
-  // If swiped more than 60px, snap open to show BOTH buttons (140px)
-  if (d > 60) {
-    el.style.transform = `translateX(-140px)`;
-  } else {
-    el.style.transform = `translateX(0)`;
-  }
-}
+      function hEnd(e, el) {
+        el.style.transition =
+          "transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)";
+        let d = tX - e.changedTouches[0].clientX;
+
+        // If swiped more than 60px, snap open to show BOTH buttons (140px)
+        if (d > 60) {
+          el.style.transform = `translateX(-140px)`;
+        } else {
+          el.style.transform = `translateX(0)`;
+        }
+      }
 
       function triggerEdit(id) {
         const s = sales.find((x) => x.id === id);
@@ -1194,14 +1206,13 @@
         closeProductEditor();
         renderManage();
       }
-      
-      function deleteSale(id) {
-  if (confirm("Delete this sale record?")) {
-    sales = sales.filter((s) => s.id !== id);
-    save(); // This automatically calls render() and updates the UI
-  }
-}
 
+      function deleteSale(id) {
+        if (confirm("Delete this sale record?")) {
+          sales = sales.filter((s) => s.id !== id);
+          save(); // This automatically calls render() and updates the UI
+        }
+      }
 
       function deleteCfg(c) {
         if (
