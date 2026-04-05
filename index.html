@@ -159,6 +159,17 @@
       #logModal.open {
         display: flex;
       }
+      #logModal .std-select {
+        margin-bottom: 15px; /* Adds breathing room between Category and Variety */
+        padding: 12px 15px; /* More height for easier tapping */
+        font-size: 1rem; /* Larger text for better readability */
+        height: 50px; /* Consistent height */
+      }
+
+      #logModal h2 {
+        margin-bottom: 20px;
+        color: var(--accent);
+      }
       .modal-header {
         display: flex;
         justify-content: space-between;
@@ -755,8 +766,13 @@
             background: none;
             border: none;
             color: var(--danger);
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             font-weight: bold;
+            padding: 10px; /* Adds a larger invisible tap area */
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           "
         >
           ✕
@@ -899,11 +915,26 @@
 
       function openLogModal() {
         document.getElementById("logModal").classList.add("open");
+        // Hide the + button
+        const fab = document.querySelector(".fab");
+        if (fab) fab.style.display = "none";
         initApp();
         setActiveField("qty");
       }
+
       function closeLogModal() {
         document.getElementById("logModal").classList.remove("open");
+
+        // Show the + button again, but ONLY if we aren't on the Setup page
+        const fab = document.querySelector(".fab");
+        const isSetup = document
+          .getElementById("setupUI")
+          .classList.contains("open");
+
+        if (fab && !isSetup) {
+          fab.style.display = "flex";
+        }
+
         editId = null;
         document.getElementById("mainLogBtn").innerText = "LOG SALE";
         document.getElementById("mainLogBtn").style.background =
