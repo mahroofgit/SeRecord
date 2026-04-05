@@ -1001,23 +1001,23 @@
         else list.sort((a, b) => b.rawTs - a.rawTs);
 
         document.getElementById("historyLog").innerHTML = list
-          .map(
-            (s) => `
+  .map(
+    (s) => `
 <div class="swipe-item">
     <div class="swipe-actions">
-        <div class="action-btn" style="background:var(--edit)" onclick="editCfg('${c}')">Edit</div>
-        <div class="action-btn" style="background:var(--danger)" onclick="deleteCfg('${c}')">Del</div>
+        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${s.id})">EDIT</div>
+        <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${s.id})">DEL</div>
     </div>
     <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
-        <span class="manage-name">${c}</span>
-        <span class="manage-meta">${Object.keys(config[c]).length} Vars</span>
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <span style="font-weight:700; font-size:0.95rem;">${s.qty}x ${s.var}</span>
+          <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">${s.cat} • ${s.ts}</span>
+        </div>
+        <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(2)}</span>
     </div>
-</div>
-`
+</div>`
+  ).join("");
 
-          )
-          .join("");
-      }
 
       // --- SWIPE GESTURES ---
       let tX = 0;
@@ -1205,6 +1205,14 @@
         closeProductEditor();
         renderManage();
       }
+      
+      function deleteSale(id) {
+  if (confirm("Delete this sale record?")) {
+    sales = sales.filter((s) => s.id !== id);
+    save(); // This automatically calls render() and updates the UI
+  }
+}
+
 
       function deleteCfg(c) {
         if (
