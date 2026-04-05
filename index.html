@@ -582,9 +582,9 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 75px;
-        background: rgba(28, 28, 30, 0.95);
-        backdrop-filter: blur(10px);
+        height: 60px;
+        background: rgba(13, 20, 35, 0.98);
+        backdrop-filter: blur(15px);
         display: flex;
         justify-content: space-around;
         align-items: center;
@@ -594,27 +594,34 @@
       }
 
       .tab-item {
+        flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        color: var(--sub);
-        font-size: 0.7rem;
+        gap: 4px;
+        color: #64748b; /* Muted slate instead of emoji colors */
+        font-size: 0.65rem;
         font-weight: 600;
-        transition: 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
       .tab-item.active {
-        color: var(--accent); /* Your 3D printing brand green */
+        color: var(--accent);
       }
 
-      .tab-icon {
-        font-size: 1.4rem;
-        margin-bottom: 4px;
+      .tab-icon-svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
       }
 
-      /* Adjust FAB so it doesn't overlap the new bar */
+      /* FAB - Lifted higher to sit perfectly above the new slim bar */
       .fab {
-        bottom: 95px !important; /* Move above the tab bar */
+        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        right: 20px;
+        width: 56px; /* Slightly smaller for density */
+        height: 56px;
       }
 
       /* Adjust body padding so list content isn't hidden behind the bar */
@@ -669,11 +676,19 @@
           class="tab-item active"
           onclick="switchTab('breakdown')"
         >
-          <div class="tab-icon">📊</div>
+          <svg class="tab-icon-svg" viewBox="0 0 24 24">
+            <path
+              d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+            />
+          </svg>
           <span>Dashboard</span>
         </div>
         <div id="tab-history" class="tab-item" onclick="switchTab('history')">
-          <div class="tab-icon">📜</div>
+          <svg class="tab-icon-svg" viewBox="0 0 24 24">
+            <path
+              d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"
+            />
+          </svg>
           <span>Sales Log</span>
         </div>
       </div>
