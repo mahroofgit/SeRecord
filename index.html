@@ -27,11 +27,45 @@
         background: var(--bg);
         color: var(--text);
         margin: 0;
-        padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom);
+        padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
         user-select: none;
         -webkit-font-smoothing: antialiased;
         height: 100vh;
-        overflow-x: hidden;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #mainView {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: env(safe-area-inset-top);
+        box-sizing: border-box;
+      }
+
+      /* This makes the active section take up all remaining space */
+      #section-breakdown,
+      #section-history,
+      #setupUI {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding-bottom: 80px; /* Space so list doesn't go behind Tab Bar */
+      }
+
+      /* This makes ONLY the lists scrollable */
+      #summaryArea,
+      #historyLog,
+      #manageList {
+        flex: 1;
+        background: rgba(29, 44, 69, 0.4);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow-y: auto;
+        margin-bottom: 12px;
+        -webkit-overflow-scrolling: touch;
       }
 
       /* Clean Revenue Card */
@@ -39,19 +73,19 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 22px;
+        padding: 12px 18px;
         background: var(--card);
-        border-radius: 24px;
+        border-radius: 10px;
         border: 1px solid var(--border);
-        margin-top: 5px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        margin-top: 0;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
       }
 
       .revenue-info {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
       }
 
       .revenue-label {
@@ -194,11 +228,12 @@
       /* Modernized List Container */
       .list-container {
         background: rgba(29, 44, 69, 0.4);
-        border-radius: 24px;
+        border-radius: 12px;
         border: 1px solid var(--border);
-        margin-top: 10px;
+        margin-top: 0;
         overflow: hidden;
         backdrop-filter: blur(10px);
+        width: 100%;
       }
 
       .list-header-label {
@@ -237,9 +272,9 @@
         /* This gives the product name 50% of the screen and keeps data tight */
         grid-template-columns: 1.5fr 60px 90px;
         justify-content: start; /* Pulls everything to the left */
-        gap: 10px; /* Adds a controlled gap between columns */
+        gap: 8px; /* Adds a controlled gap between columns */
         align-items: center;
-        padding: 10px 15px;
+        padding: 8px 12px;
         border-bottom: 1px solid var(--border);
         min-height: 20px; /* Slightly taller for better touch targets */
       }
@@ -369,8 +404,9 @@
         min-height: calc(100vh - 60px - env(safe-area-inset-bottom));
         background: var(--bg);
         display: none;
+        flex: 1;
         flex-direction: column;
-        padding: 12px 15px;
+        padding: 0;
         box-sizing: border-box;
       }
 
@@ -387,7 +423,7 @@
         -webkit-overflow-scrolling: touch;
         background: rgba(0, 0, 0, 0.2); /* Deep inset look */
         border: 1px solid var(--border);
-        border-radius: 16px;
+        border-radius: 10px;
         margin-bottom: 15x;
       }
 
@@ -399,13 +435,10 @@
       }
 
       /* Subtle Zebra Striping for High-Density scannability */
-      #manageList .swipe-item:nth-child(even) .swipe-content {
-        background: #162033; /* Matches your --row-alt or slightly lighter */
-      }
 
       /* Row Content Layout */
       #manageList .swipe-content {
-        padding: 14px 18px;
+        padding: 10px 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -415,6 +448,12 @@
         z-index: 2;
         width: 100%;
         box-sizing: border-box;
+        border-bottom: 1px solid var(--border);
+        background: #162033;
+      }
+
+      #manageList .swipe-item:last-child .swipe-content {
+        border-bottom: none;
       }
 
       .swipe-actions {
@@ -456,6 +495,9 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        padding-bottom: calc(
+          85px + env(safe-area-inset-bottom)
+        ); /* Lift above tab-bar */
       }
 
       .compact-log-btn {
@@ -794,10 +836,6 @@
             Restore JSON
           </button>
         </div>
-
-        <button class="back-btn" onclick="toggleUI('tracker')">
-          BACK TO SALES
-        </button>
       </div>
 
       <div id="productEditor" class="hidden">
