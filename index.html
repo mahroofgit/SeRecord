@@ -970,22 +970,29 @@
           setup: document.getElementById("setupUI"),
         };
 
-        // 3. Hide all views and show only the selected one
+        // 3. Hide all views
         Object.keys(views).forEach((key) => {
           if (views[key]) {
             views[key].classList.add("hidden");
-            views[key].classList.remove("open"); // Reset setup-specific class
+            views[key].classList.remove("open");
           }
         });
 
+        // 4. Show the selected view
         const targetView = views[tab];
         if (targetView) {
           targetView.classList.remove("hidden");
-          // Add the 'open' class for Setup to maintain your existing flex logic
           if (tab === "setup") {
             targetView.classList.add("open");
             renderManage();
           }
+        }
+
+        // 5. THE FIX: Toggle the FAB specifically here
+        const fab = document.querySelector(".fab");
+        if (fab) {
+          // Hide if tab is 'setup', show otherwise
+          fab.style.display = tab === "setup" ? "none" : "flex";
         }
 
         render();
@@ -1153,18 +1160,7 @@
         localStorage.setItem("3D_SLS_v21", JSON.stringify(sales));
         render();
       }
-      function toggleUI(m) {
-        const setup = document.getElementById("setupUI");
-        if (m === "setup") {
-          setup.classList.add("open");
-          setup.classList.remove("hidden");
-          renderManage();
-        } else {
-          setup.classList.remove("open");
-          setup.classList.add("hidden");
-          render();
-        }
-      }
+
       function initApp() {
         const cats = Object.keys(config);
         document.getElementById("selCategory").innerHTML = cats
@@ -1328,7 +1324,7 @@
             sales = d.sales;
             save();
             initApp();
-            toggleUI("tracker");
+            switchTab("breakdown");
           };
           r.readAsText(e.target.files[0]);
         };
