@@ -314,6 +314,7 @@
         height: 100%;
         width: 140px;
         display: flex;
+        flex-direction: row;
         z-index: 1;
       }
       .action-btn {
@@ -1035,10 +1036,17 @@
         let d = tX - e.touches[0].clientX;
         if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`;
       }
-      function hEnd(e, el) {
-        let d = tX - e.changedTouches[0].clientX;
-        el.style.transform = d > 70 ? `translateX(-140px)` : `translateX(0)`;
-      }
+ function hEnd(e, el) {
+  el.style.transition = "transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)";
+  let d = tX - e.changedTouches[0].clientX;
+  
+  // If swiped more than 60px, snap open to show BOTH buttons (140px)
+  if (d > 60) {
+    el.style.transform = `translateX(-140px)`;
+  } else {
+    el.style.transform = `translateX(0)`;
+  }
+}
 
       function triggerEdit(id) {
         const s = sales.find((x) => x.id === id);
