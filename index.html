@@ -1003,26 +1003,20 @@
         document.getElementById("historyLog").innerHTML = list
           .map(
             (s) => `
-                <div class="swipe-item">
-                    <div class="swipe-actions">
-                        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${
-                          s.id
-                        })">Edit</div>
-                        <div class="action-btn" style="background:var(--danger)" onclick="if(confirm('Delete this sale?')){sales=sales.filter(x=>x.id!=${
-                          s.id
-                        });save();}">Del</div>
-                    </div>
-                    <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
-                        <div><b style="font-size:1rem;">${s.qty}x ${
-              s.var
-            }</b><br><small style="color:var(--sub)">${s.cat} • ${
-              s.ts
-            }</small></div>
-                        <b style="color:var(--accent); font-size:1.1rem;">$${s.total.toFixed(
-                          2
-                        )}</b>
-                    </div>
-                </div>`
+                // Inside renderManage...
+`
+<div class="swipe-item">
+    <div class="swipe-actions">
+        <div class="action-btn" style="background:var(--edit)" onclick="editCfg('${c}')">Edit</div>
+        <div class="action-btn" style="background:var(--danger)" onclick="deleteCfg('${c}')">Del</div>
+    </div>
+    <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
+        <span class="manage-name">${c}</span>
+        <span class="manage-meta">${Object.keys(config[c]).length} Vars</span>
+    </div>
+</div>
+`
+
           )
           .join("");
       }
