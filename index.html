@@ -27,7 +27,7 @@
         background: var(--bg);
         color: var(--text);
         margin: 0;
-        padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+        padding: env(safe-area-inset-top) 15px 0;
         user-select: none;
         -webkit-font-smoothing: antialiased;
         height: 100vh;
@@ -52,7 +52,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding-bottom: 80px; /* Space so list doesn't go behind Tab Bar */
+        padding-bottom: 150px; /* Space so list doesn't go behind Tab Bar */
       }
 
       /* This makes ONLY the lists scrollable */
@@ -124,10 +124,10 @@
       /* Floating Action Button */
       .fab {
         position: fixed;
-        bottom: calc(100px + env(safe-area-inset-bottom)) !important;
-        right: 25px;
-        width: 65px;
-        height: 65px;
+        bottom: calc(85px + env(safe-area-inset-bottom)) !important;
+        right: 20px;
+        width: 56px;
+        height: 56px;
         background: var(--accent);
         border-radius: 50%;
         display: flex;
@@ -135,8 +135,8 @@
         justify-content: center;
         font-size: 2.2rem;
         color: #000;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-        z-index: 500;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        z-index: 1001;
         border: none;
         font-weight: bold;
       }
@@ -435,7 +435,7 @@
       #manageList {
         flex-grow: 1;
         flex-shrink: 1;
-        max-height: 60vh; /* Prevents pushing action buttons off-screen */
+        max-height: 50vh; /* Prevents pushing action buttons off-screen */
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         background: rgba(0, 0, 0, 0.2); /* Deep inset look */
@@ -511,10 +511,11 @@
       .setup-footer {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
         padding-bottom: calc(
-          85px + env(safe-area-inset-bottom)
+          90px + env(safe-area-inset-bottom)
         ); /* Lift above tab-bar */
+        flex-shrink: 0;
       }
 
       .compact-log-btn {
@@ -634,14 +635,15 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 60px;
+        height: calc(60px + env(safe-area-inset-bottom));
         background: rgba(13, 20, 35, 0.98);
         backdrop-filter: blur(15px);
         display: flex;
         justify-content: space-around;
-        align-items: center;
+        align-items: flex-start;
         border-top: 1px solid var(--border);
-        padding-bottom: env(safe-area-inset-bottom); /* iOS Handle support */
+        padding-top: 10px;
+        box-sizing: border-box;
         z-index: 100;
       }
 
@@ -666,14 +668,6 @@
         width: 20px;
         height: 20px;
         fill: currentColor;
-      }
-
-      /* FAB - Lifted higher to sit perfectly above the new slim bar */
-      .fab {
-        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
-        right: 20px;
-        width: 56px; /* Slightly smaller for density */
-        height: 56px;
       }
 
       /* Adjust body padding so list content isn't hidden behind the bar */
