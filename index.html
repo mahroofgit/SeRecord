@@ -166,7 +166,24 @@
         margin-bottom: 20px;
       }
 
-      .std-select,
+      .std-select {
+        width: 100%;
+        background: var(--card); /* Matches the Header and Tab Bar */
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem; /* Slightly smaller for precision */
+        font-weight: 600;
+        appearance: none;
+        -webkit-appearance: none;
+        /* Add a custom subtle chevron if you want a professional look */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+      }
+
       .std-input {
         width: 100%;
         background: var(--card);
@@ -679,9 +696,7 @@
       </div>
 
       <div id="section-history" class="hidden">
-        <div
-          style="display: flex; gap: 10px; margin-bottom: 15px; padding: 0 5px"
-        >
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; padding: 0">
           <select
             class="std-select"
             id="filterCat"
