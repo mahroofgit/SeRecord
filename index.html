@@ -925,6 +925,8 @@
       function closeLogModal() {
         document.getElementById("logModal").classList.remove("open");
 
+        window.scrollTo(0, 0);
+
         // Show the + button again, but ONLY if we aren't on the Setup page
         const fab = document.querySelector(".fab");
         const isSetup = document
@@ -1278,6 +1280,7 @@
         editor.classList.add("hidden");
         editor.classList.remove("open");
         setupPage.classList.remove("dimmed");
+        window.scrollTo(0, 0);
       }
 
       // Override your old editCfg to use the popup instead
