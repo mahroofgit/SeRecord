@@ -1017,7 +1017,7 @@
     </div>
 </div>`
   ).join("");
-
+}
 
       // --- SWIPE GESTURES ---
       let tX = 0;
@@ -1112,19 +1112,7 @@
         d.innerHTML = `<input class="std-input vn" placeholder="Variety" value="${v}" style="flex:2; margin:0;"><input class="std-input vp" type="number" placeholder="$" value="${p}" style="flex:1; margin:0;">`;
         document.getElementById("variantList").appendChild(d);
       }
-      function saveConfig() {
-        const c = document.getElementById("newCat").value;
-        if (!c) return;
-        config[c] = {};
-        document.querySelectorAll(".vn").forEach((n, i) => {
-          if (n.value)
-            config[c][n.value] =
-              parseFloat(document.querySelectorAll(".vp")[i].value) || 0;
-        });
-        save();
-        initApp();
-        toggleUI("tracker");
-      }
+
       function renderManage() {
         document.getElementById("manageList").innerHTML = Object.keys(config)
           .map(
