@@ -1150,31 +1150,25 @@
         document.getElementById("historyLog").innerHTML = list
           .map(
             (s) => `
-<div class="swipe-item">
-    <div class="swipe-actions">
-        <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${
-          s.id
-        })">EDIT</div>
-        <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${
-          s.id
-        })">DEL</div>
-    </div>
-    <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
-        <div style="display:flex; flex-direction:column; gap:2px;">
-          <span style="font-weight:700; font-size:0.95rem;">${s.qty}x ${
-              s.var
-            }</span>
-          <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">${
-            s.cat
-          } • ${s.ts}</span>
-        </div>
-        <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(
-          2
-        )}</span>
-    </div>
-</div>`
+        <div class="swipe-item">
+            <div class="swipe-actions">
+                <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${s.id})">EDIT</div>
+                <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${s.id})">DEL</div>
+            </div>
+            <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-weight:700; font-size:0.95rem; text-transform:uppercase;">${s.cat}</span>
+                  
+                  <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">
+                    ${s.qty}x ${s.var} • ${s.ts}
+                  </span>
+                </div>
+                <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(2)}</span>
+            </div>
+        </div>`
           )
           .join("");
+
       }
 
       // --- SWIPE GESTURES ---
