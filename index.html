@@ -680,6 +680,14 @@
         height: 20px;
         fill: currentColor;
       }
+      
+      input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1); /* Makes the calendar icon white */
+        }
+        input[type="date"] {
+            color-scheme: dark; /* Forces the mobile date-picker popup to be dark mode */
+        }
+
 
       /* Adjust body padding so list content isn't hidden behind the bar */
       body {
@@ -785,6 +793,14 @@
         onchange="loadVariants()"
       ></select>
       <select class="std-select" id="selVariant" onchange="autoFill()"></select>
+
+      <div class="input-group" style="margin-bottom: 12px;">
+        <div class="input-box active" style="width: 100%; height: 45px; flex-direction: row; justify-content: space-between; padding: 0 15px; border: 1px solid var(--border);">
+          <span class="box-label" style="margin: 0; font-size: 0.7rem;">SALE DATE</span>
+          <input type="date" id="saleDate" 
+            style="background: transparent; border: none; color: white; font-family: inherit; font-size: 0.9rem; text-align: right; outline: none; width: 60%;">
+        </div>
+      </div>
 
       <div class="input-group">
         <div class="input-box" id="box-qty" onclick="setActiveField('qty')">
@@ -915,12 +931,17 @@
 
       function openLogModal() {
         document.getElementById("logModal").classList.add("open");
-        // Hide the + button
+        
+        // Set default date to today (YYYY-MM-DD format)
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("saleDate").value = today;
+      
         const fab = document.querySelector(".fab");
         if (fab) fab.style.display = "none";
         initApp();
         setActiveField("qty");
       }
+
 
       function closeLogModal() {
         document.getElementById("logModal").classList.remove("open");
@@ -1033,29 +1054,40 @@
 
       // --- DATA PROCESSING ---
       function processSale() {
-        let q = parseFloat(buffers.qty) || 0,
-          t = parseFloat(buffers.total) || 0;
-        if (q <= 0 || t <= 0) return;
-        const sale = {
-          id: editId || Date.now(),
-          cat: document.getElementById("selCategory").value,
-          var: document.getElementById("selVariant").value,
-          qty: q,
-          unit: parseFloat(buffers.unit) || 0,
-          total: t,
-          ts: new Date().toLocaleString("en-GB", {
-            day: "numeric",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          rawTs: editId ? sales.find((x) => x.id === editId).rawTs : Date.now(),
-        };
-        if (editId) sales = sales.map((s) => (s.id === editId ? sale : s));
-        else sales.unshift(sale);
-        save();
-        closeLogModal();
-      }
+          let q = parseFloat(buffers.qty) || 0,
+            t = parseFloat(buffers.total) || 0;
+          if (q <= 0 || t <= 0) return;
+        
+          const rawDateValue = document.getElementById("saleDate").value; // e.g., "2026-04-05"
+          const dateObj = new Date(rawDateValue);
+        
+          const sale = {
+            id: editId || Date.now(),
+            cat: document.getElementById("selCategory").value,
+            var: document.getElementById("selVariant").value,
+            qty: q,
+            unit: parseFloat(buffers.unit) || 0,
+            total: t,
+            // Store the manual date for editing later
+            manualDate: rawDateValue, 
+            // Format the display string based on the chosen date
+            ts: dateObj.toLocaleString("en-GB", {
+              day: "numeric",
+              month: "short",
+              // If today, keep time; otherwise, just show date
+              ...(rawDateValue === new Date().toISOString().split('T')[0] 
+                  ? { hour: "2-digit", minute: "2-digit" } 
+                  : {})
+            }),
+            rawTs: editId ? sales.find((x) => x.id === editId).rawTs : Date.now(),
+          };
+        
+          if (editId) sales = sales.map((s) => (s.id === editId ? sale : s));
+          else sales.unshift(sale);
+          
+          save();
+          closeLogModal();
+        }
 
       function render() {
         let grand = 0,
@@ -1173,6 +1205,12 @@
         if (!s) return;
         editId = id;
         openLogModal();
+      
+        // Populate the date field with the stored manual date
+        if (s.manualDate) {
+          document.getElementById("saleDate").value = s.manualDate;
+        }
+      
         document.getElementById("selCategory").value = s.cat;
         loadVariants();
         document.getElementById("selVariant").value = s.var;
@@ -1182,9 +1220,8 @@
           total: s.total.toString(),
         };
         updateDisplays();
-        document.getElementById("mainLogBtn").innerText = "UPDATE SALE";
-        document.getElementById("mainLogBtn").style.background = "var(--edit)";
-        document.getElementById("mainLogBtn").style.color = "white";
+        
+        // UI Button state...
       }
 
       // --- CONFIG & SYSTEM ---
