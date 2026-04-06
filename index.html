@@ -1347,23 +1347,43 @@
         a.download = `SeRecord_${dateStr}.json`;
         a.click();
       }
-      function importJSON() {
-        const i = document.createElement("input");
-        i.type = "file";
-        i.onchange = (e) => {
-          const r = new FileReader();
-          r.onload = () => {
-            const d = JSON.parse(r.result);
-            config = d.config;
-            sales = d.sales;
-            save();
-            initApp();
-            switchTab("breakdown");
-          };
-          r.readAsText(e.target.files[0]);
-        };
-        i.click();
+    function importJSON() {
+  // 1. Alert the user before any action is taken
+  const confirmOverwrite = confirm("Are you sure? This will delete all current products and sales data and replace them with the backup file.");
+
+  if (!confirmOverwrite) return; // Exit if they click 'Cancel'
+
+  const i = document.createElement("input");
+  i.type = "file";
+  i.accept = ".json"; // Ensure only JSON files can be selected
+  
+  i.onchange = (e) => {
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const d = JSON.parse(r.result);
+        
+        // Basic validation to ensure the file is compatible
+        if (d.config && d.sales) {
+          config = d.config;
+          sales = d.sales;
+          
+          save(); // Commit to localStorage
+          initApp();
+          switchTab("breakdown");
+          
+          alert("Data restored successfully.");
+        } else {
+          alert("Error: The selected file is not a valid backup.");
+        }
+      } catch (err) {
+        alert("Error: Could not read the file.");
       }
+    };
+    r.readAsText(e.target.files[0]);
+  };
+  i.click();
+}
 
       window.onload = () => {
         initApp();
