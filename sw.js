@@ -1,8 +1,8 @@
-// SeRecord service worker
+// Sol3D service worker
 // Network-first: you always get the latest version when online,
 // and the cached copy when offline. Bump CACHE when shipping changes
 // to clean out old caches (not required for updates to reach users).
-const CACHE = "serecord-v2";
+const CACHE = "sol3d-v3";
 const ASSETS = [
   "./",
   "index.html",

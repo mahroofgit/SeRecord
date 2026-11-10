@@ -1,4 +1,6 @@
-# SeRecord
+# Sol3D
+
+(Formerly SeRecord. The repo name and internal storage keys keep the old name so existing data keeps working.)
 
 Offline-first sales tracker for 3D print products. Built for iPhone (Safari / Home Screen app). It's plain HTML, CSS and JS with no build step, hosted on GitHub Pages.
 

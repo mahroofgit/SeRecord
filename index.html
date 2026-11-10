@@ -6,12 +6,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <title>SeRecord</title>
+    <title>Sol3D</title>
     <meta name="theme-color" content="#09132a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="SeRecord" />
+    <meta name="apple-mobile-web-app-title" content="Sol3D" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
@@ -968,7 +968,7 @@
             </div>
             <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
           </div>
-          <div class="version">SeRecord v2 · data stays on this device</div>
+          <div class="version">Sol3D v2 · data stays on this device</div>
         </div>
       </section>
     </div>
@@ -1073,7 +1073,7 @@
       const KEY_CFG = "3D_CFG_v21";
       const KEY_SLS = "3D_SLS_v21";
       const KEY_META = "SeRecord_meta";
-      const KEY_UNDO = "SeRecord_preRestore";
+      const KEY_UNDO = "SeRecord_preRestore"; // keep key names: existing data lives here
       const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const ACTION_W = 140;
 
@@ -1762,8 +1762,8 @@
 
       async function exportJSON() {
         // Same {config, sales} shape as before (extra fields are ignored by older versions)
-        const data = { config, sales, app: "SeRecord", version: 2, exportedAt: new Date().toISOString() };
-        const ok = await deliverFile(JSON.stringify(data, null, 2), `SeRecord_${stamp()}.json`, "application/json");
+        const data = { config, sales, app: "Sol3D", version: 2, exportedAt: new Date().toISOString() };
+        const ok = await deliverFile(JSON.stringify(data, null, 2), `Sol3D_${stamp()}.json`, "application/json");
         if (ok) {
           meta.lastBackup = Date.now();
           meta.salesAtBackup = sales.length;
@@ -1777,7 +1777,7 @@
         const rows = [...sales].sort((a, b) => dateKey(a).localeCompare(dateKey(b)));
         const lines = [["Date", "Product", "Variety", "Count", "Unit Price", "Total"].join(",")];
         rows.forEach((s) => lines.push([dateKey(s), q(s.cat), q(s.var), s.qty, s.unit.toFixed(2), s.total.toFixed(2)].join(",")));
-        deliverFile("﻿" + lines.join("\r\n"), `SeRecord_sales_${stamp()}.csv`, "text/csv");
+        deliverFile("﻿" + lines.join("\r\n"), `Sol3D_sales_${stamp()}.csv`, "text/csv");
       }
 
       function importJSON() {

@@ -1,6 +1,6 @@
 {
-  "name": "SeRecord – 3D Print Sales",
-  "short_name": "SeRecord",
+  "name": "Sol3D – 3D Print Sales",
+  "short_name": "Sol3D",
   "description": "Offline-first sales tracker for 3D print products.",
   "start_url": "./",
   "scope": "./",
