@@ -1499,7 +1499,7 @@
                 <button class="action-btn edit" data-act="edit-sale" data-id="${s.id}">Edit</button>
                 <button class="action-btn del" data-act="del-sale" data-id="${s.id}">Del</button>
               </div>
-              <div class="swipe-content" data-tap="edit-sale" data-id="${s.id}">
+              <div class="swipe-content" data-id="${s.id}">
                 <div class="sale-main">
                   <span class="sale-title">${esc(s.cat)}</span>
                   <span class="sale-sub">${esc(displayDate(s))} • ${qtyFmt(s.qty)}x ${esc(s.var)}</span>
@@ -1536,7 +1536,7 @@
                 <button class="action-btn edit" data-act="edit-cfg" data-cat="${esc(c)}">Edit</button>
                 <button class="action-btn del" data-act="del-cfg" data-cat="${esc(c)}">Del</button>
               </div>
-              <div class="swipe-content" data-tap="edit-cfg" data-cat="${esc(c)}">
+              <div class="swipe-content" data-cat="${esc(c)}">
                 <div style="min-width:0">
                   <div class="manage-name">${esc(c)}</div>
                   <div class="manage-sub num">${range}</div>
@@ -1621,16 +1621,8 @@
             else if (act === "del-cfg") deleteCfg(cat);
             return;
           }
-          const row = e.target.closest("[data-tap]");
-          if (!row || Date.now() - sw.swipedAt < 350) return;
-          if (sw.open) {
-            closeOpenSwipe();
-            return;
-          }
-          if (row.dataset.tap === "edit-sale") {
-            const s = sales.find((x) => x.id === Number(row.dataset.id));
-            if (s) openLogModal(s);
-          } else if (row.dataset.tap === "edit-cfg") openProductEditor(row.dataset.cat);
+          // Tapping a row only closes an open swipe; editing is via swipe actions
+          if (e.target.closest(".swipe-content") && Date.now() - sw.swipedAt > 350) closeOpenSwipe();
         });
       }
 
