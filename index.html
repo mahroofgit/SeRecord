@@ -6,1466 +6,1903 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <title>SeRecorder Pro v26</title>
+    <title>SeRecord</title>
+    <meta name="theme-color" content="#09132a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SeRecord" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <style>
-      /* UI THEME: Deep Dark & Clean */
-      /* UI THEME: Midnight Forest - Calm & Professional */
+      /* ---------- THEME: Midnight + Sage ---------- */
       :root {
-        --bg: #09132a; /* Deep Midnight */
-        --card: #1d2c45; /* Slate Blue */
-        --accent: #86efac; /* Sage Accent */
-        --text: #f1f5f9; /* Soft White */
-        --sub: #94a3b8; /* Muted Slate */
-        --border: #334155; /* Subtle Deep Blue Border */
-        --danger: #fda4af; /* Muted Rose */
-        --edit: #7dd3fc; /* Sky Blue */
-        --row-alt: #162033; /* Darker Blue for nested rows */
+        --bg: #09132a;
+        --bg-2: #0d1a33;
+        --card: #16233b;
+        --card-2: #1d2c45;
+        --row-alt: #121e34;
+        --accent: #86efac;
+        --accent-dim: rgba(134, 239, 172, 0.12);
+        --text: #f1f5f9;
+        --sub: #94a3b8;
+        --muted: #64748b;
+        --border: #263552;
+        --danger: #fda4af;
+        --danger-bg: #e11d48;
+        --edit: #7dd3fc;
+        --edit-bg: #0284c7;
+        --warn: #fcd34d;
+        --radius: 14px;
+        --tabbar-h: 60px;
+        --safe-b: env(safe-area-inset-bottom);
+        --safe-t: env(safe-area-inset-top);
+        --mono: "SF Mono", ui-monospace, "Roboto Mono", Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
       }
 
       body {
-        font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
-        background: var(--bg);
+        font-family: -apple-system, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
         color: var(--text);
-        margin: 0;
-        padding: env(safe-area-inset-top) 15px 0;
         user-select: none;
+        -webkit-user-select: none;
         -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+
+      button,
+      select,
+      input {
+        font-family: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:active {
+        opacity: 0.85;
+      }
+
+      .num {
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- APP SHELL ---------- */
+      #app {
         height: 100vh;
-        overflow: hidden;
+        height: 100dvh;
         display: flex;
         flex-direction: column;
+        padding: calc(var(--safe-t) + 12px) 14px 0;
       }
 
-      #mainView {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: env(safe-area-inset-top);
-        box-sizing: border-box;
-      }
-
-      /* This makes the active section take up all remaining space */
-      #section-breakdown,
-      #section-history,
-      #setupUI {
+      .view {
         flex: 1;
+        min-height: 0;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        padding-bottom: 150px; /* Space so list doesn't go behind Tab Bar */
+        padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px);
       }
 
-      /* This makes ONLY the lists scrollable */
-      #summaryArea,
-      #historyLog,
-      #manageList {
-        flex: 1;
-        background: rgba(29, 44, 69, 0.4);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        overflow-y: auto;
-        margin-bottom: 12px;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* Clean Revenue Card */
-      .header {
+      .view-title {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        padding: 12px 18px;
-        background: var(--card);
-        border-radius: 10px;
+        align-items: baseline;
+        margin: 2px 2px 12px;
+      }
+      .view-title h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      .view-title .meta {
+        color: var(--sub);
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+
+      .scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        background: var(--bg-2);
         border: 1px solid var(--border);
-        margin-top: 0;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border-radius: var(--radius);
+      }
+      /* room so last row isn't covered by the FAB */
+      .scroll.has-fab::after {
+        content: "";
+        display: block;
+        height: 72px;
       }
 
-      .revenue-info {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
+      .empty {
+        padding: 40px 24px;
+        text-align: center;
+        color: var(--sub);
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      .empty strong {
+        display: block;
+        color: var(--text);
+        font-size: 0.95rem;
+        margin-bottom: 4px;
       }
 
-      .revenue-label {
+      /* ---------- HERO (dashboard) ---------- */
+      .hero {
+        background: linear-gradient(145deg, #1d2c45 0%, #13213a 100%);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 14px 16px 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .hero-label {
         color: var(--sub);
         font-size: 0.65rem;
         font-weight: 700;
         letter-spacing: 1.2px;
         text-transform: uppercase;
       }
-
-      .grand-total-val {
-        font-size: 1.5rem;
+      .hero-total {
+        font-size: 2rem;
         font-weight: 900;
         color: var(--accent);
         letter-spacing: -1.5px;
-        line-height: 1;
+        line-height: 1.1;
+        margin: 2px 0 10px;
+      }
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+      .stat-label {
+        display: block;
+        color: var(--muted);
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .stat-val {
+        font-size: 0.95rem;
+        font-weight: 800;
       }
 
-      .settings-btn {
-        width: 48px;
-        height: 48px;
-        background: rgba(0, 0, 0, 0.2) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        transition: transform 0.1s;
+      .seg {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 3px;
+        margin-bottom: 10px;
       }
-
-      .settings-btn:active {
-        transform: scale(0.9);
-      }
-
-      /* Floating Action Button */
-      .fab {
-        position: fixed;
-        bottom: calc(85px + env(safe-area-inset-bottom)) !important;
-        right: 20px;
-        width: 56px;
-        height: 56px;
-        background: var(--accent);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.2rem;
-        color: #000;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        z-index: 1001;
+      .seg button {
+        background: none;
         border: none;
-        font-weight: bold;
+        color: var(--sub);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 7px 0;
+        border-radius: 9px;
       }
-
-      /* Modal / Popup Logic */
-      #logModal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: var(--bg);
-        z-index: 500;
-        display: none;
-        flex-direction: column;
-        padding: 20px;
-        box-sizing: border-box;
-        padding-top: env(safe-area-inset-top);
-      }
-      #logModal.open {
-        display: flex;
-      }
-      #logModal .std-select {
-        margin-bottom: 15px; /* Adds breathing room between Category and Variety */
-        padding: 12px 15px; /* More height for easier tapping */
-        font-size: 1rem; /* Larger text for better readability */
-        height: 50px; /* Consistent height */
-      }
-
-      #logModal h2 {
-        margin-bottom: 20px;
+      .seg button.active {
+        background: var(--card-2);
         color: var(--accent);
       }
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
+
+      /* ---------- BREAKDOWN TABLE ---------- */
+      .table-head,
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 52px 92px;
+        gap: 8px;
         align-items: center;
-        margin-bottom: 20px;
+        padding: 0 14px;
+      }
+      .table-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #142a45;
+        border-bottom: 1px solid var(--border);
+        padding-top: 8px;
+        padding-bottom: 8px;
+      }
+      .table-head span {
+        color: var(--sub);
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 1.3px;
+        text-transform: uppercase;
+      }
+      .table-head span:nth-child(2) {
+        text-align: center;
+      }
+      .table-head span:nth-child(3),
+      .row .c-rev {
+        text-align: right;
+      }
+      .row .c-qty {
+        text-align: center;
       }
 
+      .cat-row {
+        position: relative;
+        padding-top: 9px;
+        padding-bottom: 12px;
+        background: rgba(255, 255, 255, 0.035);
+        border-top: 1px solid var(--border);
+        border-left: 2px solid var(--accent);
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      .cat-row:first-of-type {
+        border-top: none;
+      }
+      .cat-row .c-rev {
+        color: var(--accent);
+      }
+      .share-bar {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 5px;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.06);
+        overflow: hidden;
+      }
+      .share-bar i {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        opacity: 0.55;
+        border-radius: 2px;
+      }
+      .var-row {
+        padding-top: 6px;
+        padding-bottom: 6px;
+        font-size: 0.78rem;
+        color: #cbd5e1;
+      }
+      .var-row .c-name {
+        padding-left: 16px;
+        font-weight: 600;
+      }
+      .var-row .c-qty,
+      .var-row .c-rev {
+        color: var(--sub);
+        font-family: var(--mono);
+        font-size: 0.72rem;
+      }
+      .c-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tag {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--warn);
+        border: 1px solid rgba(252, 211, 77, 0.35);
+        border-radius: 6px;
+        vertical-align: 1px;
+      }
+
+      /* ---------- LOG FILTERS ---------- */
+      .filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
       .std-select {
         width: 100%;
-        background: var(--card); /* Matches the Header and Tab Bar */
+        min-width: 0;
+        background: var(--card);
         border: 1px solid var(--border);
         color: var(--text);
-        padding: 10px 12px;
+        padding: 10px 34px 10px 12px;
         border-radius: 12px;
-        font-size: 0.85rem; /* Slightly smaller for precision */
+        font-size: 0.85rem;
         font-weight: 600;
         appearance: none;
         -webkit-appearance: none;
-        /* Add a custom subtle chevron if you want a professional look */
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 16px;
       }
 
-      .std-input {
-        width: 100%;
+      /* ---------- SWIPE ROWS ---------- */
+      .swipe-item {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-2);
+        border-bottom: 1px solid var(--border);
+      }
+      .swipe-item:last-child {
+        border-bottom: none;
+      }
+      .swipe-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 140px;
+        display: flex;
+      }
+      .action-btn {
+        flex: 1;
+        border: none;
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .action-btn.edit {
+        background: var(--edit-bg);
+      }
+      .action-btn.del {
+        background: var(--danger-bg);
+      }
+      .swipe-content {
+        position: relative;
+        z-index: 2;
         background: var(--card);
+        padding: 11px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+        will-change: transform;
+      }
+      .sale-main {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .sale-title {
+        font-weight: 750;
+        font-size: 0.92rem;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .sale-sub {
+        color: var(--sub);
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .sale-amt {
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .sale-amt b {
+        display: block;
+        color: var(--accent);
+        font-weight: 800;
+        font-size: 0.98rem;
+      }
+      .sale-amt small {
+        color: var(--muted);
+        font-size: 0.62rem;
+        font-family: var(--mono);
+      }
+      .day-sep {
+        padding: 6px 14px;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: var(--bg-2);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      /* ---------- FAB ---------- */
+      .fab {
+        position: fixed;
+        bottom: calc(var(--tabbar-h) + var(--safe-b) + 18px);
+        right: 18px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        background: var(--accent);
+        color: #052e16;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(134, 239, 172, 0.12);
+        z-index: 400;
+      }
+      .fab svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      /* ---------- TAB BAR ---------- */
+      .tab-bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(var(--tabbar-h) + var(--safe-b));
+        padding-bottom: var(--safe-b);
+        background: rgba(9, 16, 32, 0.96);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid var(--border);
+        display: flex;
+        z-index: 300;
+      }
+      .tab-item {
+        flex: 1;
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: var(--muted);
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        position: relative;
+      }
+      .tab-item.active {
+        color: var(--accent);
+      }
+      .tab-item svg {
+        width: 21px;
+        height: 21px;
+        fill: currentColor;
+      }
+      .tab-item .dot {
+        position: absolute;
+        top: 9px;
+        left: calc(50% + 9px);
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--warn);
+        display: none;
+      }
+      .tab-item .dot.on {
+        display: block;
+      }
+
+      /* ---------- LOG / EDIT SALE SHEET ---------- */
+      #logModal {
+        position: fixed;
+        inset: 0;
+        z-index: 600;
+        background: var(--bg);
+        display: none;
+        flex-direction: column;
+        padding: calc(var(--safe-t) + 10px) 18px calc(var(--safe-b) + 14px);
+        overflow-y: auto;
+      }
+      #logModal.open {
+        display: flex;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        color: var(--accent);
+        letter-spacing: -0.4px;
+      }
+      #logModal.editing .modal-header h2 {
+        color: var(--edit);
+      }
+      .close-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
         border: 1px solid var(--border);
-        color: white;
-        padding: 15px;
-        border-radius: 14px;
+        background: var(--card);
+        color: var(--danger);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      .close-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .field-label {
+        color: var(--muted);
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin: 0 2px 5px;
+      }
+      #logModal .std-select {
+        height: 50px;
         font-size: 1rem;
         margin-bottom: 12px;
-        box-sizing: border-box;
-        appearance: none;
-        -webkit-appearance: none;
+      }
+      .date-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 50px;
+        padding: 0 14px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 12px;
+      }
+      .date-row span {
+        color: var(--sub);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+      }
+      .date-row input {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 1rem;
+        font-weight: 600;
+        text-align: right;
+        outline: none;
+        min-width: 0;
+        width: 60%;
+        color-scheme: dark;
+      }
+      .date-row input::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+      }
+      .date-row input::-webkit-date-and-time-value {
+        text-align: right;
       }
 
       .input-group {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 15px;
+        gap: 8px;
+        margin-bottom: 10px;
       }
       .input-box {
         background: var(--card);
-        padding: 12px 5px;
+        padding: 10px 4px;
         border-radius: 12px;
         text-align: center;
         border: 2px solid transparent;
-        transition: 0.2s;
+        transition: border-color 0.15s, background 0.15s;
       }
       .input-box.active {
         border-color: var(--accent);
-        background: #1a2a1d;
+        background: #13301f;
       }
       .box-label {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         color: var(--sub);
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         text-transform: uppercase;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.8px;
       }
       .box-val {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: 800;
-      }
-
-      .log-btn {
-        background: var(--accent);
-        color: #000;
-        width: 100%;
-        padding: 20px;
-        border-radius: 18px;
-        border: none;
-        font-size: 1.3rem;
-        font-weight: 800;
-        margin-top: 10px;
-        min-height: 65px; /* Ensures buttons don't collapse */
-      }
-
-      /* Modernized List Container */
-      .list-container {
-        background: rgba(29, 44, 69, 0.4);
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        margin-top: 0;
         overflow: hidden;
-        backdrop-filter: blur(10px);
-        width: 100%;
+        text-overflow: ellipsis;
       }
-
-      .list-header-label {
-        display: grid !important;
-        /* MUST match your .summary-row columns exactly */
-        grid-template-columns: 1.5fr 60px 90px;
-        gap: 10px;
-        padding: 8px 15px;
-        background: rgba(28, 68, 96, 0.601);
-        border-bottom: 2px solid var(--border) !important;
-        align-items: center;
-      }
-
-      .list-header-label span {
-        color: var(--sub);
-        font-size: 0.75rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 1.5px; /* This fixes the "clumped" look */
-      }
-      .list-header-label span:nth-child(1) {
-        text-align: left;
-      }
-      /* Ensure the labels align with the data below */
-      .list-header-label span:nth-child(2) {
-        text-align: left;
-        width: 20px; /* Forces it to occupy the full track width */
-      }
-      .list-header-label span:nth-child(3) {
-        text-align: right;
-        width: 30px; /* Forces it to occupy the full track width */
-      }
-
-      .summary-row {
-        display: grid !important;
-        /* This gives the product name 50% of the screen and keeps data tight */
-        grid-template-columns: 1.5fr 60px 90px;
-        justify-content: start; /* Pulls everything to the left */
-        gap: 8px; /* Adds a controlled gap between columns */
-        align-items: center;
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--border);
-        min-height: 20px; /* Slightly taller for better touch targets */
-      }
-
-      /* --- UPDATED: Category vs Variety Styling --- */
-      .cat-row {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-left: 2px solid var(--accent) !important; /* Thick bar for categories */
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--text) !important;
-        min-height: 28px;
-        padding-top: 0.5px;
-        padding-bottom: 0.5px;
-      }
-
-      .variety-row {
-        background: transparent;
-        color: var(--sub);
-        font-size: 0.85rem; /* Smaller font for sub-items */
-        min-height: 18px;
-        padding-top: 4px;
-        padding-bottom: 4px;
-      }
-
-      .variety-row .col-product {
-        color: #cbd5e1 !important;
-        font-weight: 600;
-        letter-spacing: -0.2px;
-        padding-left: 28px !important; /* Stronger indentation for nesting */
-        font-size: 0.8rem;
-      }
-
-      .variety-row .col-count,
-      .variety-row .col-price {
-        color: var(--sub) !important; /* Muted data for sub-items */
-        font-size: 0.75rem;
-        opacity: 0.7;
-        font-family: "SF Mono", "Roboto Mono", monospace;
-        font-weight: 500;
-      }
-
-      .list-header-label span:nth-child(2) {
-        text-align: center;
-      }
-      .list-header-label span:nth-child(3) {
-        text-align: right;
-      }
-
-      /* Swipe items */
-      .swipe-item {
-        position: relative;
-        background: var(--bg);
-        overflow: hidden;
-        border-bottom: 1px solid #2c2c2e;
-      }
-      .swipe-content {
-        position: relative;
-        background: var(--card);
-        padding: 12px 15px;
-        z-index: 2;
-        transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .swipe-actions {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        height: 100%;
-        width: 140px;
-        display: flex;
-        flex-direction: row;
-        z-index: 1;
-      }
-      .action-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-
-      /* Numpad */
       .numpad-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        width: 100%;
-        margin-top: 10px;
+        gap: 8px;
+        margin-top: 2px;
       }
       .num-btn {
-        background: #2c2c2e;
-        border: none;
-        color: white;
-        padding: 18px;
-        border-radius: 15px;
-        font-size: 1.6rem;
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 14px;
+        font-size: 1.55rem;
         font-weight: 700;
-        min-height: 50px; /* Fixes the thin line issue */
+        min-height: 56px;
+        padding: 0;
+      }
+      .num-btn:active {
+        background: var(--card-2);
+        transform: scale(0.97);
+      }
+      .num-btn.clear {
+        color: var(--danger);
+        font-size: 1.2rem;
+      }
+      .primary-btn {
+        width: 100%;
+        border: none;
+        border-radius: 16px;
+        background: var(--accent);
+        color: #052e16;
+        font-size: 1.15rem;
+        font-weight: 850;
+        letter-spacing: 0.5px;
+        min-height: 60px;
+        margin-top: 12px;
+      }
+      #logModal.editing .primary-btn {
+        background: var(--edit);
+        color: #082f49;
+      }
+      .shake {
+        animation: shake 0.3s;
+      }
+      @keyframes shake {
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
       }
 
-      .header .num-btn {
-        border-radius: 14px;
+      /* ---------- SETUP ---------- */
+      .section-label {
+        color: var(--muted);
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin: 0 2px 6px;
+      }
+      .manage-name {
+        font-weight: 700;
+        font-size: 0.95rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .manage-sub {
+        color: var(--sub);
+        font-size: 0.7rem;
+        margin-top: 2px;
+      }
+      .badge {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--accent);
+        background: var(--accent-dim);
+        border: 1px solid rgba(134, 239, 172, 0.22);
+        padding: 3px 9px;
+        border-radius: 8px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .setup-footer {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .btn {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 800;
+        font-size: 0.85rem;
+      }
+      .btn.accent {
+        background: var(--accent);
+        color: #052e16;
+      }
+      .card {
+        background: var(--card);
         border: 1px solid var(--border);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        border-radius: var(--radius);
         padding: 10px;
       }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0 2px 8px;
+        font-size: 0.7rem;
+      }
+      .card-head b {
+        color: var(--sub);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 0.62rem;
+      }
+      #backupStatus {
+        color: var(--sub);
+        font-weight: 600;
+      }
+      #backupStatus.stale {
+        color: var(--warn);
+      }
+      .btn-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .secondary-btn {
+        background: #263552;
+        color: var(--text);
+        border: none;
+        padding: 10px 6px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .link-btn {
+        background: none;
+        border: none;
+        color: var(--edit);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 8px 0 0;
+        width: 100%;
+      }
+      .version {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.6rem;
+        letter-spacing: 0.5px;
+      }
 
-      .header .num-btn:active {
-        background: #3a3a3c !important;
-        transform: scale(0.92);
+      /* ---------- PRODUCT EDITOR ---------- */
+      #editorOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 700;
+        background: rgba(3, 7, 18, 0.7);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px);
+      }
+      #editorOverlay.open {
+        display: flex;
+      }
+      #productEditor {
+        width: 100%;
+        max-width: 460px;
+        max-height: 100%;
+        overflow-y: auto;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 18px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      }
+      #productEditor h3 {
+        margin: 0;
+        font-size: 1.15rem;
+      }
+      .std-input {
+        width: 100%;
+        min-width: 0;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 13px 14px;
+        border-radius: 12px;
+        font-size: 1rem;
+        appearance: none;
+        -webkit-appearance: none;
+        user-select: text;
+        -webkit-user-select: text;
+        outline: none;
+      }
+      .std-input:focus {
+        border-color: var(--accent);
+      }
+      .var-edit-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+        align-items: center;
+      }
+      .var-edit-row .vn {
+        flex: 2;
+      }
+      .var-edit-row .vp-wrap {
+        flex: 1;
+        position: relative;
+      }
+      .var-edit-row .vp-wrap::before {
+        content: "$";
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .var-edit-row .vp {
+        padding-left: 22px;
+      }
+      .row-del {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--danger);
+        font-size: 1.1rem;
+        padding: 0;
+      }
+      .ghost-btn {
+        width: 100%;
+        background: transparent;
+        border: 1px dashed var(--border);
+        color: var(--sub);
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin: 4px 0 4px;
+      }
+      #productEditor .primary-btn {
+        background: var(--edit);
+        color: #082f49;
+        min-height: 52px;
+        font-size: 1rem;
       }
 
       .hidden {
         display: none !important;
       }
-
-      #setupUI {
-        position: relative;
-        width: 100%;
-        min-height: calc(100vh - 60px - env(safe-area-inset-bottom));
-        background: var(--bg);
-        display: none;
-        flex: 1;
-        flex-direction: column;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      #setupUI.open {
-        display: flex;
-      }
-
-      /* --- CONSOLIDATED MANAGE PRODUCTS LIST --- */
-      #manageList {
-        flex-grow: 1;
-        flex-shrink: 1;
-        max-height: 50vh; /* Prevents pushing action buttons off-screen */
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        background: rgba(0, 0, 0, 0.2); /* Deep inset look */
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        margin-bottom: 15x;
-      }
-
-      /* Individual Swipe Rows */
-      #manageList .swipe-item {
-        position: relative;
-        overflow: hidden;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      /* Subtle Zebra Striping for High-Density scannability */
-
-      /* Row Content Layout */
-      #manageList .swipe-content {
-        padding: 10px 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        /* CHANGE: Use var(--card) or var(--bg) instead of transparent */
-        background: var(--card);
-        position: relative;
-        z-index: 2;
-        width: 100%;
-        box-sizing: border-box;
-        border-bottom: 1px solid var(--border);
-        background: #162033;
-      }
-
-      #manageList .swipe-item:last-child .swipe-content {
-        border-bottom: none;
-      }
-
-      .swipe-actions {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 140px; /* This is the max distance you should allow swiping */
-        display: flex;
-        z-index: 1;
-        display: flex;
-        flex-direction: row;
-        gap: 0;
-      }
-
-      /* Product Name Text */
-      .manage-name {
-        font-weight: 700;
-        color: var(--text);
-        font-size: 1rem;
-        letter-spacing: -0.3px;
-      }
-
-      /* Variety Count Badge */
-      .manage-meta {
-        font-family: "SF Mono", monospace;
-        font-size: 0.7rem;
-        color: var(--accent);
-        background: rgba(134, 239, 172, 0.1);
-        padding: 3px 10px;
-        border-radius: 8px;
-        text-transform: uppercase;
-        font-weight: 800;
-        border: 1px solid rgba(134, 239, 172, 0.2);
-      }
-
-      /* Compact Button Layouts */
-      .setup-footer {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding-bottom: calc(
-          90px + env(safe-area-inset-bottom)
-        ); /* Lift above tab-bar */
-        flex-shrink: 0;
-      }
-
-      .compact-log-btn {
-        width: 100%;
-        padding: 12px;
-        border-radius: 14px;
-        font-weight: 800;
-        font-size: 0.9rem;
-        border: none;
-      }
-
-      .json-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        padding: 10px;
-        background: var(--card);
-        border-radius: 16px;
-        border: 1px solid var(--border);
-      }
-
-      .secondary-btn {
-        background: #3a3a3c;
-        color: white;
-        border: none;
-        padding: 8px;
-        border-radius: 10px;
-        font-size: 0.75rem;
-        font-weight: 600;
-      }
-
-      .back-btn {
-        margin-top: 0 !important;
-        background: #2c2c2e;
-        color: #fff;
-        width: 100%;
-        padding: 12px !important;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        font-weight: 700;
-        font-size: 0.8rem;
-      }
-      /* The floating popup */
-      #productEditor {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90%;
-        max-height: 80vh;
-        background: var(--card);
-        z-index: 700;
-        padding: 20px;
-        border-radius: 24px;
-        border: 1px solid var(--border);
-        display: none;
-        flex-direction: column;
-        overflow-y: auto;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-      }
-      #productEditor.open {
-        display: flex;
-      }
-      /* Dim the background when the popup is open */
-      /* Only blur the background elements, not the popup itself */
-      #setupUI.dimmed > *:not(#productEditor) {
-        filter: blur(5px);
-        pointer-events: none;
-        opacity: 0.4;
-      }
-
-      /* Compact +NEW PRODUCT button */
-      #setupUI .log-btn {
-        padding: 12px; /* Reduced from 20px */
-        font-size: 1rem; /* Slightly smaller text */
-        min-height: 45px;
-        margin-top: 0;
-      }
-
-      /* Compact JSON/Back Buttons */
-      .json-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        background: rgba(29, 44, 69, 0.4);
-        padding: 10px;
-        border-radius: 16px;
-        border: 1px solid var(--border);
-      }
-
-      .secondary-btn {
-        background: #334155;
-        color: var(--text);
-        border: none;
-        padding: 10px; /* Compact padding */
-        border-radius: 10px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-      }
-
-      /* Full width Back button */
-      .back-btn {
-        background: #1e293b;
-        color: var(--sub);
-        width: 100%;
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        font-weight: 700;
-        margin-top: 5px;
-      }
-
-      /* Bottom Tab Bar */
-      .tab-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: calc(60px + env(safe-area-inset-bottom));
-        background: rgba(13, 20, 35, 0.98);
-        backdrop-filter: blur(15px);
-        display: flex;
-        justify-content: space-around;
-        align-items: flex-start;
-        border-top: 1px solid var(--border);
-        padding-top: 10px;
-        box-sizing: border-box;
-        z-index: 100;
-      }
-
-      .tab-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        color: #64748b; /* Muted slate instead of emoji colors */
-        font-size: 0.65rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .tab-item.active {
-        color: var(--accent);
-      }
-
-      .tab-icon-svg {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-      }
-
-      input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(1); /* Makes the calendar icon white */
-      }
-      input[type="date"] {
-        color-scheme: dark; /* Forces the mobile date-picker popup to be dark mode */
-      }
-
-      /* Adjust body padding so list content isn't hidden behind the bar */
-      body {
-        padding-bottom: 100px;
-      }
     </style>
   </head>
   <body>
-    <div id="mainView">
-      <div class="header">
-        <div class="revenue-info">
-          <div class="revenue-label">NET REVENUE</div>
-          <div class="grand-total-val">$<span id="grandTotal">0.00</span></div>
+    <div id="app">
+      <!-- ============ DASHBOARD ============ -->
+      <section id="view-breakdown" class="view">
+        <div class="hero">
+          <div class="hero-label" id="heroLabel">Revenue · All time</div>
+          <div class="hero-total num">$<span id="grandTotal">0.00</span></div>
+          <div class="hero-stats">
+            <div><span class="stat-label">Sales</span><span class="stat-val num" id="statSales">0</span></div>
+            <div><span class="stat-label">Units</span><span class="stat-val num" id="statUnits">0</span></div>
+            <div><span class="stat-label">Avg sale</span><span class="stat-val num" id="statAvg">$0.00</span></div>
+          </div>
         </div>
-      </div>
+        <div class="seg" id="periodSeg">
+          <button data-period="all">All</button>
+          <button data-period="month">Month</button>
+          <button data-period="30d">30 days</button>
+          <button data-period="year">Year</button>
+        </div>
+        <div id="summaryArea" class="scroll has-fab"></div>
+      </section>
 
-      <div id="section-breakdown">
-        <div id="summaryArea" class="list-container"></div>
-      </div>
-
-      <div id="section-history" class="hidden">
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; padding: 0">
-          <select
-            class="std-select"
-            id="filterCat"
-            onchange="render()"
-            style="flex: 1.5; margin-bottom: 0"
-          ></select>
-          <select
-            class="std-select"
-            id="sortMode"
-            onchange="render()"
-            style="flex: 1; margin-bottom: 0"
-          >
+      <!-- ============ SALES LOG ============ -->
+      <section id="view-history" class="view hidden">
+        <div class="view-title">
+          <h1>Sales Log</h1>
+          <span class="meta num" id="logMeta"></span>
+        </div>
+        <div class="filters">
+          <select class="std-select" id="filterCat" style="flex: 1.5"></select>
+          <select class="std-select" id="sortMode" style="flex: 1">
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="high">High to Low</option>
             <option value="low">Low to High</option>
           </select>
         </div>
-        <div id="historyLog" class="list-container"></div>
-      </div>
+        <div id="historyLog" class="scroll has-fab"></div>
+      </section>
 
-      <div class="tab-bar">
-        <div
-          id="tab-breakdown"
-          class="tab-item active"
-          onclick="switchTab('breakdown')"
-        >
-          <svg class="tab-icon-svg" viewBox="0 0 24 24">
-            <path
-              d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
-            />
-          </svg>
-          <span>Dash</span>
+      <!-- ============ SETUP ============ -->
+      <section id="view-setup" class="view hidden">
+        <div class="view-title">
+          <h1>Product Setup</h1>
+          <span class="meta" id="setupMeta"></span>
         </div>
-        <div id="tab-history" class="tab-item" onclick="switchTab('history')">
-          <svg class="tab-icon-svg" viewBox="0 0 24 24">
-            <path
-              d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"
-            />
-          </svg>
-          <span>Log</span>
-        </div>
-        <div id="tab-setup" class="tab-item" onclick="switchTab('setup')">
-          <svg class="tab-icon-svg" viewBox="0 0 24 24">
-            <path
-              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-            />
-          </svg>
-          <span>Setup</span>
-        </div>
-      </div>
+        <div class="section-label">Manage products</div>
+        <div id="manageList" class="scroll"></div>
 
-      <button class="fab" onclick="openLogModal()">+</button>
+        <div class="setup-footer">
+          <button class="btn accent" id="btnNewProduct">+ NEW PRODUCT</button>
+          <div class="card">
+            <div class="card-head">
+              <b>Backup</b><span id="backupStatus"></span>
+            </div>
+            <div class="btn-grid">
+              <button class="secondary-btn" id="btnExport">Backup JSON</button>
+              <button class="secondary-btn" id="btnImport">Restore JSON</button>
+              <button class="secondary-btn" id="btnCSV" style="grid-column: span 2">Export CSV (Excel)</button>
+            </div>
+            <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
+          </div>
+          <div class="version">SeRecord v2 · data stays on this device</div>
+        </div>
+      </section>
     </div>
 
-    <div id="logModal">
+    <button class="fab" id="fab" aria-label="Log sale">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+    </button>
+
+    <nav class="tab-bar">
+      <button id="tab-breakdown" class="tab-item active" data-tab="breakdown">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
+        <span>Dash</span>
+      </button>
+      <button id="tab-history" class="tab-item" data-tab="history">
+        <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" /></svg>
+        <span>Log</span>
+      </button>
+      <button id="tab-setup" class="tab-item" data-tab="setup">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" /></svg>
+        <span>Setup</span>
+        <span class="dot" id="backupDot"></span>
+      </button>
+    </nav>
+
+    <!-- ============ LOG / EDIT SALE ============ -->
+    <div id="logModal" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h2 id="modalTitle" style="margin: 0">Log Sale</h2>
-        <button
-          onclick="closeLogModal()"
-          style="
-            background: none;
-            border: none;
-            color: var(--danger);
-            font-size: 2.2rem;
-            font-weight: bold;
-            padding: 10px; /* Adds a larger invisible tap area */
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          "
-        >
-          ✕
+        <h2 id="modalTitle">Log Sale</h2>
+        <button class="close-btn" id="btnCloseLog" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
       </div>
 
-      <select
-        class="std-select"
-        id="selCategory"
-        onchange="loadVariants()"
-      ></select>
-      <select class="std-select" id="selVariant" onchange="autoFill()"></select>
+      <div class="field-label">Product</div>
+      <select class="std-select" id="selCategory"></select>
+      <div class="field-label">Variety</div>
+      <select class="std-select" id="selVariant"></select>
 
-      <div class="input-group" style="margin-bottom: 12px">
-        <div
-          class="input-box active"
-          style="
-            width: 100%;
-            height: 45px;
-            flex-direction: row;
-            justify-content: space-between;
-            padding: 0 15px;
-            border: 1px solid var(--border);
-          "
-        >
-          <span class="box-label" style="margin: 0; font-size: 0.7rem"
-            >SALE DATE</span
-          >
-          <input
-            type="date"
-            id="saleDate"
-            style="
-              background: transparent;
-              border: none;
-              color: white;
-              font-family: inherit;
-              font-size: 0.9rem;
-              text-align: right;
-              outline: none;
-              width: 60%;
-            "
-          />
-        </div>
-      </div>
+      <label class="date-row">
+        <span>SALE DATE</span>
+        <input type="date" id="saleDate" />
+      </label>
 
       <div class="input-group">
-        <div class="input-box" id="box-qty" onclick="setActiveField('qty')">
+        <div class="input-box" id="box-qty" data-field="qty">
           <span class="box-label">Count</span>
-          <div class="box-val" id="disp-qty">1</div>
+          <div class="box-val num" id="disp-qty">1</div>
         </div>
-        <div class="input-box" id="box-unit" onclick="setActiveField('unit')">
+        <div class="input-box" id="box-unit" data-field="unit">
           <span class="box-label">Unit $</span>
-          <div class="box-val" id="disp-unit">0.00</div>
+          <div class="box-val num" id="disp-unit">0.00</div>
         </div>
-        <div class="input-box" id="box-total" onclick="setActiveField('total')">
+        <div class="input-box" id="box-total" data-field="total">
           <span class="box-label">Total $</span>
-          <div class="box-val" id="disp-total">0.00</div>
+          <div class="box-val num" id="disp-total">0.00</div>
         </div>
       </div>
 
-      <div class="numpad-grid">
-        <button class="num-btn" onclick="press('1')">1</button
-        ><button class="num-btn" onclick="press('2')">2</button
-        ><button class="num-btn" onclick="press('3')">3</button>
-        <button class="num-btn" onclick="press('4')">4</button
-        ><button class="num-btn" onclick="press('5')">5</button
-        ><button class="num-btn" onclick="press('6')">6</button>
-        <button class="num-btn" onclick="press('7')">7</button
-        ><button class="num-btn" onclick="press('8')">8</button
-        ><button class="num-btn" onclick="press('9')">9</button>
-        <button class="num-btn" onclick="press('.')">.</button
-        ><button class="num-btn" onclick="press('0')">0</button>
-        <button
-          class="num-btn"
-          onclick="press('C')"
-          style="color: var(--danger)"
-        >
-          C
-        </button>
+      <div class="numpad-grid" id="numpad">
+        <button class="num-btn" data-key="1">1</button>
+        <button class="num-btn" data-key="2">2</button>
+        <button class="num-btn" data-key="3">3</button>
+        <button class="num-btn" data-key="4">4</button>
+        <button class="num-btn" data-key="5">5</button>
+        <button class="num-btn" data-key="6">6</button>
+        <button class="num-btn" data-key="7">7</button>
+        <button class="num-btn" data-key="8">8</button>
+        <button class="num-btn" data-key="9">9</button>
+        <button class="num-btn" data-key=".">.</button>
+        <button class="num-btn" data-key="0">0</button>
+        <button class="num-btn clear" data-key="C">C</button>
       </div>
-      <button class="log-btn" id="mainLogBtn" onclick="processSale()">
-        LOG SALE
-      </button>
+      <button class="primary-btn" id="mainLogBtn">LOG SALE</button>
     </div>
 
-    <div id="setupUI" class="hidden">
-      <h2 style="margin: 0 0 10px 0">Product Setup</h2>
-
-      <div
-        class="section-title"
-        style="
-          color: var(--sub);
-          font-size: 0.7rem;
-          font-weight: bold;
-          letter-spacing: 1px;
-          margin-bottom: 5px;
-        "
-      >
-        MANAGE PRODUCTS
-      </div>
-
-      <div id="manageList" class="list-container"></div>
-
-      <div class="setup-footer">
-        <button
-          class="compact-log-btn"
-          onclick="openProductEditor()"
-          style="background: var(--accent); color: black"
-        >
-          + NEW PRODUCT
-        </button>
-
-        <div class="json-grid">
-          <button class="secondary-btn" onclick="exportJSON()">
-            Backup JSON
-          </button>
-          <button class="secondary-btn" onclick="importJSON()">
-            Restore JSON
-          </button>
-        </div>
-      </div>
-
-      <div id="productEditor" class="hidden">
+    <!-- ============ PRODUCT EDITOR ============ -->
+    <div id="editorOverlay">
+      <div id="productEditor" role="dialog" aria-modal="true">
         <div class="modal-header">
-          <h3 id="editTitle" style="margin: 0">Product Details</h3>
-          <button
-            onclick="closeProductEditor()"
-            style="
-              background: none;
-              border: none;
-              color: var(--danger);
-              font-size: 1.8rem;
-            "
-          >
-            ✕
+          <h3 id="editTitle">Add Product</h3>
+          <button class="close-btn" id="btnCloseEditor" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
-        <input
-          class="std-input"
-          id="newCat"
-          placeholder="Category Name (e.g. Plant Pot)"
-        />
+        <div class="field-label">Product name</div>
+        <input class="std-input" id="newCat" placeholder="e.g. Plant Pot" autocomplete="off" style="margin-bottom: 14px" />
+        <div class="field-label">Varieties &amp; default price</div>
         <div id="variantList"></div>
-        <button
-          class="num-btn"
-          style="width: 100%; margin-bottom: 12px; font-size: 1rem"
-          onclick="addVarRow()"
-        >
-          + Add Variety
-        </button>
-        <button
-          class="log-btn"
-          onclick="saveConfig()"
-          style="background: var(--edit); color: white"
-        >
-          SAVE PRODUCT
-        </button>
+        <button class="ghost-btn" id="btnAddVar">+ Add Variety</button>
+        <button class="primary-btn" id="btnSaveProduct">SAVE PRODUCT</button>
       </div>
     </div>
 
     <script>
+      "use strict";
+
+      /* =====================================================
+         STORAGE — keys and data shape are unchanged from v21
+         config: { "Category": { "Variety": price, ... }, ... }
+         sales:  [{ id, cat, var, qty, unit, total, manualDate, ts, rawTs }]
+         ===================================================== */
+      const KEY_CFG = "3D_CFG_v21";
+      const KEY_SLS = "3D_SLS_v21";
+      const KEY_META = "SeRecord_meta";
+      const KEY_UNDO = "SeRecord_preRestore";
+      const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const ACTION_W = 140;
+
+      const $ = (id) => document.getElementById(id);
+      const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+      const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+      const money = (n) =>
+        Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const qtyFmt = (n) => (Number.isInteger(n) ? String(n) : String(round2(n)));
+      const esc = (s) =>
+        String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+      // Local calendar date (YYYY-MM-DD) — NOT UTC, so evening sales stay on the right day
+      function localISO(d = new Date()) {
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+      }
+      const isISODate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+      function fmtDate(iso) {
+        if (!isISODate(iso)) return "";
+        const [y, m, d] = iso.split("-");
+        return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y.slice(2)}`;
+      }
+      // Sort/filter key for a sale; legacy records without manualDate fall back to their timestamp
+      function dateKey(s) {
+        if (isISODate(s.manualDate)) return s.manualDate;
+        const t = Number(s.rawTs) || Number(s.id);
+        return t ? localISO(new Date(t)) : "0000-00-00";
+      }
+      const displayDate = (s) => fmtDate(dateKey(s));
+
+      function readStore(key, fallback, isValid) {
+        const raw = localStorage.getItem(key);
+        if (raw == null) return fallback;
+        try {
+          const v = JSON.parse(raw);
+          if (isValid(v)) return v;
+        } catch (e) {}
+        // Never silently destroy unreadable data — park a copy before falling back
+        try {
+          localStorage.setItem(key + "_unreadable_" + Date.now(), raw);
+        } catch (e) {}
+        return fallback;
+      }
+
+      function normalizeConfig(c) {
+        const out = {};
+        if (!isObj(c)) return out;
+        for (const cat of Object.keys(c)) {
+          const vars = isObj(c[cat]) ? c[cat] : {};
+          out[cat] = {};
+          for (const v of Object.keys(vars)) out[cat][v] = Number(vars[v]) || 0;
+        }
+        return out;
+      }
+
+      function normalizeSale(s) {
+        if (!isObj(s)) return null;
+        const out = { ...s }; // keep any unknown fields untouched
+        out.id = Number(s.id) || Date.now() + Math.floor(Math.random() * 1e6);
+        out.cat = String(s.cat ?? "");
+        out.var = String(s.var ?? "");
+        out.qty = Number(s.qty) || 0;
+        out.total = Number(s.total) || 0;
+        out.unit = Number(s.unit) || (out.qty ? round2(out.total / out.qty) : 0);
+        if (!Number(s.rawTs)) out.rawTs = out.id;
+        return out;
+      }
+
+      let config = normalizeConfig(readStore(KEY_CFG, { Sample: { Standard: 10.0 } }, isObj));
+      let sales = readStore(KEY_SLS, [], Array.isArray).map(normalizeSale).filter(Boolean);
+      let meta = readStore(KEY_META, {}, isObj);
+
+      function saveMeta() {
+        try {
+          localStorage.setItem(KEY_META, JSON.stringify(meta));
+        } catch (e) {}
+      }
+
+      function save() {
+        try {
+          localStorage.setItem(KEY_CFG, JSON.stringify(config));
+          localStorage.setItem(KEY_SLS, JSON.stringify(sales));
+        } catch (e) {
+          alert("Could not save — device storage is full. Please back up your data now.");
+        }
+        renderAll();
+      }
+
+      // Ask the browser not to evict our data
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+      /* =====================================================
+         STATE
+         ===================================================== */
+      let currentTab = "breakdown";
+      let activeField = "qty";
+      let isFirstKey = true;
+      let buffers = { qty: "1", unit: "0", total: "0" };
+      let editId = null;
       let editingCategoryName = null;
-      // Core Storage Keys
-      let config = JSON.parse(localStorage.getItem("3D_CFG_v21")) || {
-        Sample: { Standard: 10.0 },
-      };
-      let sales = JSON.parse(localStorage.getItem("3D_SLS_v21")) || [];
-      let activeField = "qty",
-        buffers = { qty: "1", unit: "0", total: "0" },
-        editId = null;
-      isFirstKey = true;
+      let period = ["all", "month", "30d", "year"].includes(meta.period) ? meta.period : "all";
 
-      function openLogModal() {
-        document.getElementById("logModal").classList.add("open");
+      /* =====================================================
+         NAVIGATION
+         ===================================================== */
+      function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll(".tab-item").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
+        ["breakdown", "history", "setup"].forEach((k) => $("view-" + k).classList.toggle("hidden", k !== tab));
+        updateFab();
+        closeOpenSwipe(false);
+        renderAll();
+      }
 
-        // Set default date to today (YYYY-MM-DD format)
-        const today = new Date().toISOString().split("T")[0];
-        document.getElementById("saleDate").value = today;
+      function updateFab() {
+        const hide = currentTab === "setup" || $("logModal").classList.contains("open");
+        $("fab").style.display = hide ? "none" : "flex";
+      }
 
-        const fab = document.querySelector(".fab");
-        if (fab) fab.style.display = "none";
-        initApp();
+      /* =====================================================
+         LOG / EDIT SALE
+         ===================================================== */
+      function categoryList(extra) {
+        const cats = Object.keys(config);
+        if (extra && !cats.includes(extra)) cats.push(extra);
+        return cats;
+      }
+
+      function fillCategorySelect(keepCat) {
+        $("selCategory").innerHTML = categoryList(keepCat)
+          .map((c) => `<option value="${esc(c)}">${esc(c)}${config[c] ? "" : " (archived)"}</option>`)
+          .join("");
+      }
+
+      function loadVariants(keepVar) {
+        const c = $("selCategory").value;
+        const vars = Object.keys(config[c] || {});
+        if (keepVar != null && !vars.includes(keepVar)) vars.push(keepVar);
+        $("selVariant").innerHTML = vars
+          .map((v) => `<option value="${esc(v)}">${esc(v)}${config[c] && v in config[c] ? "" : " (archived)"}</option>`)
+          .join("");
+      }
+
+      function autoFill() {
+        const c = $("selCategory").value,
+          v = $("selVariant").value;
+        if (!config[c] || !(v in config[c])) return;
+        const p = config[c][v];
+        buffers = { qty: "1", unit: String(p), total: String(p) };
         setActiveField("qty");
+        updateDisplays();
+      }
+
+      function openLogModal(sale) {
+        const modal = $("logModal");
+        editId = sale ? sale.id : null;
+
+        if (sale) {
+          fillCategorySelect(sale.cat);
+          $("selCategory").value = sale.cat;
+          loadVariants(sale.var);
+          $("selVariant").value = sale.var;
+          $("saleDate").value = dateKey(sale);
+          buffers = { qty: qtyFmt(sale.qty), unit: String(sale.unit), total: String(sale.total) };
+          updateDisplays();
+        } else {
+          fillCategorySelect();
+          if (meta.lastCat && config[meta.lastCat]) $("selCategory").value = meta.lastCat;
+          loadVariants();
+          if (meta.lastVar && config[$("selCategory").value]?.[meta.lastVar] !== undefined)
+            $("selVariant").value = meta.lastVar;
+          $("saleDate").value = localISO();
+          buffers = { qty: "1", unit: "0", total: "0" };
+          autoFill();
+          updateDisplays();
+        }
+
+        $("saleDate").max = localISO();
+        modal.classList.toggle("editing", !!sale);
+        $("modalTitle").textContent = sale ? "Edit Sale" : "Log Sale";
+        $("mainLogBtn").textContent = sale ? "SAVE CHANGES" : "LOG SALE";
+        modal.classList.add("open");
+        setActiveField("qty");
+        updateFab();
       }
 
       function closeLogModal() {
-        document.getElementById("logModal").classList.remove("open");
-
-        window.scrollTo(0, 0);
-
-        // Show the + button again, but ONLY if we aren't on the Setup page
-        const fab = document.querySelector(".fab");
-        const isSetup = document
-          .getElementById("setupUI")
-          .classList.contains("open");
-
-        if (fab && !isSetup) {
-          fab.style.display = "flex";
-        }
-
+        $("logModal").classList.remove("open", "editing");
         editId = null;
-        document.getElementById("mainLogBtn").innerText = "LOG SALE";
-        document.getElementById("mainLogBtn").style.background =
-          "var(--accent)";
-        document.getElementById("mainLogBtn").style.color = "black";
+        updateFab();
       }
 
-      // --- BUFFER & NUMPAD LOGIC ---
       function setActiveField(f) {
         activeField = f;
         isFirstKey = true;
-        document
-          .querySelectorAll(".input-box")
-          .forEach((b) => b.classList.remove("active"));
-        document.getElementById(`box-${f}`).classList.add("active");
+        document.querySelectorAll(".input-box").forEach((b) => b.classList.toggle("active", b.dataset.field === f));
       }
 
       function press(n) {
         if (n === "C") {
           buffers[activeField] = activeField === "qty" ? "1" : "0";
           isFirstKey = true;
+        } else if (isFirstKey) {
+          buffers[activeField] = n === "." ? "0." : n;
+          isFirstKey = false;
         } else {
-          // NEW Logic: Overwrite if it's the first key, otherwise append
-          if (isFirstKey) {
-            if (n === ".") buffers[activeField] = "0.";
-            else buffers[activeField] = n;
-            isFirstKey = false; // Next key in the same field will append
-          } else {
-            if (n === "." && buffers[activeField].includes(".")) return;
-            buffers[activeField] += n;
-          }
+          if (n === "." && buffers[activeField].includes(".")) return;
+          if (buffers[activeField].replace(".", "").length >= 8) return;
+          if (buffers[activeField] === "0" && n !== ".") buffers[activeField] = n;
+          else buffers[activeField] += n;
         }
 
-        // Keep your existing calculation logic below
-        let q = parseFloat(buffers.qty) || 0,
+        const q = parseFloat(buffers.qty) || 0,
           u = parseFloat(buffers.unit) || 0,
           t = parseFloat(buffers.total) || 0;
-        if (activeField === "qty" || activeField === "unit")
-          buffers.total = (q * u).toFixed(2);
-        else if (activeField === "total")
-          buffers.unit = q > 0 ? (t / q).toFixed(2) : "0";
-
+        if (activeField === "qty" || activeField === "unit") buffers.total = (q * u).toFixed(2);
+        else buffers.unit = q > 0 ? (t / q).toFixed(2) : "0";
         updateDisplays();
       }
 
       function updateDisplays() {
-        document.getElementById("disp-qty").innerText = buffers.qty;
-        document.getElementById("disp-unit").innerText = buffers.unit;
-        document.getElementById("disp-total").innerText = buffers.total;
+        $("disp-qty").textContent = buffers.qty;
+        $("disp-unit").textContent = buffers.unit;
+        $("disp-total").textContent = buffers.total;
       }
 
-      function switchTab(tab) {
-        // 1. Update Tab UI Highlights
-        document
-          .querySelectorAll(".tab-item")
-          .forEach((t) => t.classList.remove("active"));
-        const activeTab = document.getElementById(`tab-${tab}`);
-        if (activeTab) activeTab.classList.add("active");
-
-        // 2. Define all main views
-        const views = {
-          breakdown: document.getElementById("section-breakdown"),
-          history: document.getElementById("section-history"),
-          setup: document.getElementById("setupUI"),
-        };
-
-        // 3. Hide all views
-        Object.keys(views).forEach((key) => {
-          if (views[key]) {
-            views[key].classList.add("hidden");
-            views[key].classList.remove("open");
-          }
-        });
-
-        // 4. Show the selected view
-        const targetView = views[tab];
-        if (targetView) {
-          targetView.classList.remove("hidden");
-          if (tab === "setup") {
-            targetView.classList.add("open");
-            renderManage();
-          }
-        }
-
-        // 5. THE FIX: Toggle the FAB specifically here
-        const fab = document.querySelector(".fab");
-        if (fab) {
-          // Hide if tab is 'setup', show otherwise
-          fab.style.display = tab === "setup" ? "none" : "flex";
-        }
-
-        render();
+      function nudge(el) {
+        el.classList.remove("shake");
+        void el.offsetWidth;
+        el.classList.add("shake");
       }
 
-      // --- DATA PROCESSING ---
       function processSale() {
-        let q = parseFloat(buffers.qty) || 0,
+        const cat = $("selCategory").value;
+        const v = $("selVariant").value;
+        if (!cat) {
+          alert("Add a product in Setup first.");
+          return;
+        }
+        const q = parseFloat(buffers.qty) || 0,
           t = parseFloat(buffers.total) || 0;
-        if (q <= 0 || t <= 0) return;
+        if (q <= 0 || t <= 0) {
+          nudge($("box-" + (q <= 0 ? "qty" : "total")));
+          return;
+        }
+        const d = $("saleDate").value;
+        if (!isISODate(d)) {
+          nudge($("saleDate").parentElement);
+          return;
+        }
 
-        const rawDateValue = document.getElementById("saleDate").value;
-        // Ensure the date is treated as local time to prevent "day-shifting"
-        const dateObj = new Date(rawDateValue + "T00:00:00");
+        const prev = editId != null ? sales.find((x) => x.id === editId) : null;
+        let id = prev ? prev.id : Date.now();
+        if (!prev) while (sales.some((x) => x.id === id)) id++;
 
         const sale = {
-          id: editId || Date.now(),
-          cat: document.getElementById("selCategory").value,
-          var: document.getElementById("selVariant").value,
+          ...(prev || {}),
+          id,
+          cat,
+          var: v,
           qty: q,
-          unit: parseFloat(buffers.unit) || 0,
-          total: t,
-          manualDate: rawDateValue,
-          ts: dateObj.toLocaleString("en-GB", {
-            day: "numeric",
-            month: "short",
-            year: "2-digit", // This displays '26'
-            // hour and minute are removed entirely
-          }),
-          rawTs: editId ? sales.find((x) => x.id === editId).rawTs : Date.now(),
+          unit: round2(parseFloat(buffers.unit) || t / q),
+          total: round2(t),
+          manualDate: d,
+          ts: fmtDate(d),
+          rawTs: prev ? Number(prev.rawTs) || prev.id : Date.now(),
         };
 
-        if (editId) sales = sales.map((s) => (s.id === editId ? sale : s));
+        if (prev) sales = sales.map((s) => (s.id === prev.id ? sale : s));
         else sales.unshift(sale);
 
+        if (config[cat]) {
+          meta.lastCat = cat;
+          meta.lastVar = v;
+          saveMeta();
+        }
         save();
         closeLogModal();
       }
 
-      function render() {
+      function deleteSale(id) {
+        if (!confirm("Delete this sale record?")) return;
+        sales = sales.filter((s) => s.id !== id);
+        save();
+      }
+
+      /* =====================================================
+         RENDER
+         ===================================================== */
+      function inPeriod(key, p) {
+        if (p === "all") return true;
+        const today = localISO();
+        if (p === "month") return key.slice(0, 7) === today.slice(0, 7);
+        if (p === "year") return key.slice(0, 4) === today.slice(0, 4);
+        if (p === "30d") {
+          const d = new Date();
+          d.setDate(d.getDate() - 29);
+          return key >= localISO(d) && key <= today;
+        }
+        return true;
+      }
+      const PERIOD_LABEL = { all: "All time", month: "This month", "30d": "Last 30 days", year: "This year" };
+
+      function renderAll() {
+        renderDashboard();
+        renderFilterOptions();
+        renderHistory();
+        renderManage();
+        renderBackupStatus();
+      }
+
+      function renderDashboard() {
+        const list = sales.filter((s) => inPeriod(dateKey(s), period));
         let grand = 0,
-          grouped = {},
-          f = document.getElementById("filterCat").value,
-          sMode = document.getElementById("sortMode").value;
-        sales.forEach((s) => {
+          units = 0;
+        const grouped = {};
+        list.forEach((s) => {
           grand += s.total;
-          if (!grouped[s.cat]) grouped[s.cat] = { total: 0, qty: 0, vars: {} };
-          grouped[s.cat].total += s.total;
-          grouped[s.cat].qty += s.qty;
-          if (!grouped[s.cat].vars[s.var])
-            grouped[s.cat].vars[s.var] = { total: 0, qty: 0 };
-          grouped[s.cat].vars[s.var].total += s.total;
-          grouped[s.cat].vars[s.var].qty += s.qty;
+          units += s.qty;
+          const g = (grouped[s.cat] ||= { total: 0, qty: 0, vars: {} });
+          g.total += s.total;
+          g.qty += s.qty;
+          const gv = (g.vars[s.var] ||= { total: 0, qty: 0 });
+          gv.total += s.total;
+          gv.qty += s.qty;
         });
-        document.getElementById("grandTotal").innerText = grand.toLocaleString(
-          undefined,
-          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-        );
 
-        // Summary Section
-        let innerContent = `
-      <div class="list-header-label">
-        <span>PRODUCT</span>
-        <span>COUNT</span>
-        <span>REVENUE</span>
-      </div>`;
+        $("heroLabel").textContent = "Revenue · " + PERIOD_LABEL[period];
+        $("grandTotal").textContent = money(grand);
+        $("statSales").textContent = list.length;
+        $("statUnits").textContent = qtyFmt(round2(units));
+        $("statAvg").textContent = "$" + money(list.length ? grand / list.length : 0);
+        document.querySelectorAll("#periodSeg button").forEach((b) => b.classList.toggle("active", b.dataset.period === period));
 
-        for (let c in grouped) {
-          // 1. Render Category Row
-          innerContent += `
-        <div class="summary-row cat-row">
-          <span class="col-product">${c}</span>
-          <span class="col-count">${grouped[c].qty}</span>
-          <span class="col-price">$${grouped[c].total.toLocaleString(
-            undefined,
-            {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }
-          )}</span>
-        </div>`;
+        if (!list.length) {
+          $("summaryArea").innerHTML = sales.length
+            ? `<div class="empty"><strong>No sales in this period</strong>Try a wider range above.</div>`
+            : `<div class="empty"><strong>No sales yet</strong>Tap + to log your first print sale.</div>`;
+          return;
+        }
 
-          // 2. Render Sub-category (Variety) Rows
-          for (let v in grouped[c].vars) {
-            innerContent += `
-          <div class="summary-row variety-row">
-            <span class="col-product">${v}</span>
-            <span class="col-count">${grouped[c].vars[v].qty}</span>
-            <span class="col-price">$${grouped[c].vars[v].total.toFixed(
-              2
-            )}</span>
-          </div>`;
+        const cats = Object.keys(grouped).sort((a, b) => grouped[b].total - grouped[a].total);
+        let html = `<div class="table-head"><span>Product</span><span>Count</span><span>Revenue</span></div>`;
+        for (const c of cats) {
+          const g = grouped[c];
+          const share = grand > 0 ? Math.max(2, (g.total / grand) * 100) : 0;
+          html += `
+            <div class="row cat-row">
+              <span class="c-name">${esc(c)}${config[c] ? "" : '<span class="tag">archived</span>'}</span>
+              <span class="c-qty num">${qtyFmt(round2(g.qty))}</span>
+              <span class="c-rev num">$${money(g.total)}</span>
+              <div class="share-bar"><i style="width:${share.toFixed(1)}%"></i></div>
+            </div>`;
+          const vars = Object.keys(g.vars).sort((a, b) => g.vars[b].total - g.vars[a].total);
+          for (const v of vars) {
+            html += `
+            <div class="row var-row">
+              <span class="c-name">${esc(v)}</span>
+              <span class="c-qty">${qtyFmt(round2(g.vars[v].qty))}</span>
+              <span class="c-rev">$${money(g.vars[v].total)}</span>
+            </div>`;
           }
         }
-
-        document.getElementById("summaryArea").innerHTML = innerContent;
-        // History Log
-        let list = f === "All" ? [...sales] : sales.filter((x) => x.cat === f);
-        if (sMode === "high") list.sort((a, b) => b.total - a.total);
-        else if (sMode === "low") list.sort((a, b) => a.total - b.total);
-        else if (sMode === "oldest")
-          list.sort((a, b) => {
-            // Fallback to rawTs if manualDate is missing
-            const dateA = a.manualDate || "";
-            const dateB = b.manualDate || "";
-            return dateA.localeCompare(dateB) || a.rawTs - b.rawTs;
-          });
-        // Default: Newest
-        else
-          list.sort((a, b) => {
-            // Fallback to rawTs if manualDate is missing
-            const dateA = a.manualDate || "";
-            const dateB = b.manualDate || "";
-            return dateB.localeCompare(dateA) || b.rawTs - a.rawTs;
-          });
-
-        document.getElementById("historyLog").innerHTML = list
-          .map(
-            (s) => `
-            <div class="swipe-item">
-                <div class="swipe-actions">
-                    <div class="action-btn" style="background:var(--edit)" onclick="triggerEdit(${
-                      s.id
-                    })">EDIT</div>
-                    <div class="action-btn" style="background:var(--danger)" onclick="deleteSale(${
-                      s.id
-                    })">DEL</div>
-                </div>
-                <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                      <span style="font-weight:700; font-size:0.95rem; text-transform:uppercase;">${
-                        s.cat
-                      }</span>
-
-                      <span style="color:var(--sub); font-size:0.7rem; text-transform:uppercase;">
-                        ${s.ts} • ${s.qty}x ${s.var}
-                      </span>
-                    </div>
-                    <span style="font-weight:800; color:var(--accent);">$${s.total.toFixed(
-                      2
-                    )}</span>
-                </div>
-            </div>`
-          )
-          .join("");
+        $("summaryArea").innerHTML = html;
       }
 
-      // --- SWIPE GESTURES ---
-      let tX = 0;
-      function hStart(e) {
-        tX = e.touches[0].clientX;
-      }
-      function hMove(e, el) {
-        let d = tX - e.touches[0].clientX;
-        if (d > 0 && d < 150) el.style.transform = `translateX(-${d}px)`;
-      }
-      function hEnd(e, el) {
-        el.style.transition =
-          "transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)";
-        let d = tX - e.changedTouches[0].clientX;
-
-        // If swiped more than 60px, snap open to show BOTH buttons (140px)
-        if (d > 60) {
-          el.style.transform = `translateX(-140px)`;
-        } else {
-          el.style.transform = `translateX(0)`;
-        }
-      }
-
-      function triggerEdit(id) {
-        const s = sales.find((x) => x.id === id);
-        if (!s) return;
-        editId = id;
-        openLogModal();
-
-        // Populate the date field with the stored manual date
-        if (s.manualDate) {
-          document.getElementById("saleDate").value = s.manualDate;
-        }
-
-        document.getElementById("selCategory").value = s.cat;
-        loadVariants();
-        document.getElementById("selVariant").value = s.var;
-        buffers = {
-          qty: s.qty.toString(),
-          unit: s.unit.toString(),
-          total: s.total.toString(),
-        };
-        updateDisplays();
-
-        // UI Button state...
-      }
-
-      // --- CONFIG & SYSTEM ---
-      function save() {
-        localStorage.setItem("3D_CFG_v21", JSON.stringify(config));
-        localStorage.setItem("3D_SLS_v21", JSON.stringify(sales));
-        render();
-      }
-
-      function initApp() {
+      function renderFilterOptions() {
+        const sel = $("filterCat");
+        const prev = sel.value || "All";
         const cats = Object.keys(config);
-        document.getElementById("selCategory").innerHTML = cats
-          .map((c) => `<option value="${c}">${c}</option>`)
-          .join("");
-        document.getElementById("filterCat").innerHTML =
-          `<option value="All">All Categories</option>` +
-          cats.map((c) => `<option value="${c}">${c}</option>`).join("");
-        loadVariants();
-      }
-      function loadVariants() {
-        const c = document.getElementById("selCategory").value;
-        if (!config[c]) return;
-        document.getElementById("selVariant").innerHTML = Object.keys(config[c])
-          .map((v) => `<option value="${v}">${v}</option>`)
-          .join("");
-        autoFill();
-      }
-      function autoFill() {
-        const c = document.getElementById("selCategory").value,
-          v = document.getElementById("selVariant").value;
-        if (!config[c] || !config[c][v]) return;
-        buffers = {
-          qty: "1",
-          unit: config[c][v].toString(),
-          total: config[c][v].toString(),
-        };
-        updateDisplays();
+        sales.forEach((s) => {
+          if (!cats.includes(s.cat)) cats.push(s.cat);
+        });
+        sel.innerHTML =
+          `<option value="All">All Products</option>` +
+          cats.map((c) => `<option value="${esc(c)}">${esc(c)}${config[c] ? "" : " (archived)"}</option>`).join("");
+        sel.value = cats.includes(prev) ? prev : "All";
       }
 
-      function addVarRow(v = "", p = "") {
-        const d = document.createElement("div");
-        d.style = "display:flex; gap:10px; margin-bottom:12px;";
-        d.innerHTML = `<input class="std-input vn" placeholder="Variety" value="${v}" style="flex:2; margin:0;"><input class="std-input vp" type="number" placeholder="$" value="${p}" style="flex:1; margin:0;">`;
-        document.getElementById("variantList").appendChild(d);
+      function renderHistory() {
+        const f = $("filterCat").value || "All";
+        const mode = $("sortMode").value;
+        const list = f === "All" ? [...sales] : sales.filter((x) => x.cat === f);
+
+        const tsOf = (s) => Number(s.rawTs) || Number(s.id) || 0;
+        if (mode === "high") list.sort((a, b) => b.total - a.total);
+        else if (mode === "low") list.sort((a, b) => a.total - b.total);
+        else if (mode === "oldest") list.sort((a, b) => dateKey(a).localeCompare(dateKey(b)) || tsOf(a) - tsOf(b));
+        else list.sort((a, b) => dateKey(b).localeCompare(dateKey(a)) || tsOf(b) - tsOf(a));
+
+        const sum = list.reduce((a, s) => a + s.total, 0);
+        $("logMeta").textContent = list.length ? `${list.length} sales · $${money(sum)}` : "";
+
+        if (!list.length) {
+          $("historyLog").innerHTML = `<div class="empty"><strong>Nothing logged yet</strong>Sales you log will appear here.</div>`;
+          return;
+        }
+
+        // Month separators when sorted by date
+        const byDate = mode === "newest" || mode === "oldest";
+        const monthTotals = {};
+        if (byDate) list.forEach((s) => {
+          const k = dateKey(s).slice(0, 7);
+          monthTotals[k] = (monthTotals[k] || 0) + s.total;
+        });
+
+        let lastMonth = null;
+        let html = "";
+        for (const s of list) {
+          if (byDate) {
+            const k = dateKey(s).slice(0, 7);
+            if (k !== lastMonth) {
+              lastMonth = k;
+              const [y, m] = k.split("-");
+              const label = MONTHS[Number(m) - 1] ? `${MONTHS[Number(m) - 1]} ${y}` : "Undated";
+              html += `<div class="day-sep"><span>${label}</span><span class="num">$${money(monthTotals[k])}</span></div>`;
+            }
+          }
+          html += `
+            <div class="swipe-item">
+              <div class="swipe-actions">
+                <button class="action-btn edit" data-act="edit-sale" data-id="${s.id}">Edit</button>
+                <button class="action-btn del" data-act="del-sale" data-id="${s.id}">Del</button>
+              </div>
+              <div class="swipe-content" data-tap="edit-sale" data-id="${s.id}">
+                <div class="sale-main">
+                  <span class="sale-title">${esc(s.cat)}</span>
+                  <span class="sale-sub">${esc(displayDate(s))} • ${qtyFmt(s.qty)}x ${esc(s.var)}</span>
+                </div>
+                <div class="sale-amt num">
+                  <b>$${money(s.total)}</b>
+                  ${s.qty !== 1 ? `<small>@ $${money(s.unit)}</small>` : ""}
+                </div>
+              </div>
+            </div>`;
+        }
+        $("historyLog").innerHTML = html;
       }
 
       function renderManage() {
-        document.getElementById("manageList").innerHTML = Object.keys(config)
-          .map(
-            (c) => `
+        const cats = Object.keys(config);
+        $("setupMeta").textContent = cats.length ? `${cats.length} product${cats.length > 1 ? "s" : ""}` : "";
+        if (!cats.length) {
+          $("manageList").innerHTML = `<div class="empty"><strong>No products</strong>Add a product to start logging sales.</div>`;
+          return;
+        }
+        $("manageList").innerHTML = cats
+          .map((c) => {
+            const vars = Object.keys(config[c]);
+            const prices = vars.map((v) => config[c][v]);
+            const range = prices.length
+              ? Math.min(...prices) === Math.max(...prices)
+                ? `$${money(prices[0])}`
+                : `$${money(Math.min(...prices))} – $${money(Math.max(...prices))}`
+              : "No varieties";
+            return `
             <div class="swipe-item">
-                <div class="swipe-actions">
-                    <div class="action-btn" style="background:var(--edit)" onclick="editCfg('${c}')">Edit</div>
-                    <div class="action-btn" style="background:var(--danger)" onclick="deleteCfg('${c}')">Del</div>
+              <div class="swipe-actions">
+                <button class="action-btn edit" data-act="edit-cfg" data-cat="${esc(c)}">Edit</button>
+                <button class="action-btn del" data-act="del-cfg" data-cat="${esc(c)}">Del</button>
+              </div>
+              <div class="swipe-content" data-tap="edit-cfg" data-cat="${esc(c)}">
+                <div style="min-width:0">
+                  <div class="manage-name">${esc(c)}</div>
+                  <div class="manage-sub num">${range}</div>
                 </div>
-                <div class="swipe-content" ontouchstart="hStart(event)" ontouchmove="hMove(event, this)" ontouchend="hEnd(event, this)">
-                    <span style="font-weight:600;">${c}</span>
-                    <span style="color:var(--sub); font-size:0.8rem;">${
-                      Object.keys(config[c]).length
-                    } Varieties</span>
-                </div>
-            </div>
-          `
-          )
+                <span class="badge">${vars.length} ${vars.length === 1 ? "VARIETY" : "VARIETIES"}</span>
+              </div>
+            </div>`;
+          })
           .join("");
       }
+
+      /* =====================================================
+         SWIPE (direction-locked, one open row at a time)
+         ===================================================== */
+      const sw = { el: null, x0: 0, y0: 0, base: 0, dx: 0, lock: null, open: null, swipedAt: 0 };
+
+      function setX(el, x, animate) {
+        el.style.transition = animate ? "" : "none";
+        el.style.transform = x ? `translateX(${x}px)` : "";
+      }
+      function closeOpenSwipe(animate = true) {
+        if (sw.open) setX(sw.open, 0, animate);
+        sw.open = null;
+      }
+
+      function bindSwipe(container) {
+        container.addEventListener(
+          "touchstart",
+          (e) => {
+            const c = e.target.closest(".swipe-content");
+            if (sw.open && sw.open !== c && !e.target.closest(".swipe-actions")) closeOpenSwipe();
+            if (!c) return;
+            sw.el = c;
+            sw.x0 = e.touches[0].clientX;
+            sw.y0 = e.touches[0].clientY;
+            sw.base = c === sw.open ? -ACTION_W : 0;
+            sw.dx = 0;
+            sw.lock = null;
+          },
+          { passive: true }
+        );
+        container.addEventListener(
+          "touchmove",
+          (e) => {
+            if (!sw.el) return;
+            const dx = e.touches[0].clientX - sw.x0;
+            const dy = e.touches[0].clientY - sw.y0;
+            if (!sw.lock && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) sw.lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+            if (sw.lock !== "x") return;
+            e.preventDefault();
+            sw.dx = dx;
+            setX(sw.el, Math.min(0, Math.max(-ACTION_W - 20, sw.base + dx)), false);
+          },
+          { passive: false }
+        );
+        container.addEventListener("touchend", () => {
+          if (!sw.el) return;
+          if (sw.lock === "x") {
+            sw.swipedAt = Date.now();
+            const x = sw.base + sw.dx;
+            if (x < -ACTION_W / 2) {
+              setX(sw.el, -ACTION_W, true);
+              sw.open = sw.el;
+            } else {
+              setX(sw.el, 0, true);
+              if (sw.open === sw.el) sw.open = null;
+            }
+          }
+          sw.el = null;
+        });
+
+        container.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-act]");
+          if (btn) {
+            const { act, id, cat } = btn.dataset;
+            closeOpenSwipe();
+            if (act === "edit-sale") {
+              const s = sales.find((x) => x.id === Number(id));
+              if (s) openLogModal(s);
+            } else if (act === "del-sale") deleteSale(Number(id));
+            else if (act === "edit-cfg") openProductEditor(cat);
+            else if (act === "del-cfg") deleteCfg(cat);
+            return;
+          }
+          const row = e.target.closest("[data-tap]");
+          if (!row || Date.now() - sw.swipedAt < 350) return;
+          if (sw.open) {
+            closeOpenSwipe();
+            return;
+          }
+          if (row.dataset.tap === "edit-sale") {
+            const s = sales.find((x) => x.id === Number(row.dataset.id));
+            if (s) openLogModal(s);
+          } else if (row.dataset.tap === "edit-cfg") openProductEditor(row.dataset.cat);
+        });
+      }
+
+      /* =====================================================
+         PRODUCT SETUP
+         ===================================================== */
+      function addVarRow(name = "", price = "", orig = null) {
+        const d = document.createElement("div");
+        d.className = "var-edit-row";
+        d.innerHTML = `
+          <input class="std-input vn" placeholder="Variety (e.g. Small)" autocomplete="off">
+          <div class="vp-wrap"><input class="std-input vp" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>
+          <button class="row-del" aria-label="Remove variety">✕</button>`;
+        d.querySelector(".vn").value = name;
+        d.querySelector(".vp").value = price;
+        if (orig != null) d.dataset.orig = orig;
+        d.querySelector(".row-del").onclick = () => d.remove();
+        $("variantList").appendChild(d);
+        return d;
+      }
+
       function openProductEditor(catName = "") {
-        editingCategoryName = catName; // Track the name before the user changes it
-        const editor = document.getElementById("productEditor");
-        const setupPage = document.getElementById("setupUI");
-
-        document.getElementById("newCat").value = catName;
-        document.getElementById("variantList").innerHTML = "";
-        document.getElementById("editTitle").innerText = catName
-          ? "Edit Product"
-          : "Add Product";
-
-        if (catName) {
-          // Loads existing 3D print data into the popup rows
-          for (let v in config[catName]) addVarRow(v, config[catName][v]);
-        } else {
-          addVarRow(); // Fresh row for new item
-        }
-
-        editor.classList.remove("hidden");
-        editor.classList.add("open");
-        setupPage.classList.add("dimmed"); // Applies the blur/dim effect
+        editingCategoryName = catName && config[catName] ? catName : null;
+        $("newCat").value = editingCategoryName || "";
+        $("variantList").innerHTML = "";
+        $("editTitle").textContent = editingCategoryName ? "Edit Product" : "Add Product";
+        if (editingCategoryName) {
+          for (const v in config[editingCategoryName]) addVarRow(v, config[editingCategoryName][v], v);
+        } else addVarRow();
+        $("editorOverlay").classList.add("open");
       }
 
       function closeProductEditor() {
-        const editor = document.getElementById("productEditor");
-        const setupPage = document.getElementById("setupUI");
-        editor.classList.add("hidden");
-        editor.classList.remove("open");
-        setupPage.classList.remove("dimmed");
-        window.scrollTo(0, 0);
+        $("editorOverlay").classList.remove("open");
+        editingCategoryName = null;
       }
 
-      // Override your old editCfg to use the popup instead
-      function editCfg(c) {
-        openProductEditor(c);
-      }
-
-      // Update saveConfig to close the popup automatically
       function saveConfig() {
-        const newName = document.getElementById("newCat").value;
-        if (!newName) return;
-
-        // If we renamed the product, delete the old key first
-        if (editingCategoryName && editingCategoryName !== newName) {
-          delete config[editingCategoryName];
+        const newName = $("newCat").value.trim();
+        if (!newName) {
+          nudge($("newCat"));
+          return;
+        }
+        const oldName = editingCategoryName;
+        if (newName !== oldName && config[newName]) {
+          alert(`A product called "${newName}" already exists. Choose a different name.`);
+          return;
         }
 
-        config[newName] = {}; // Create/Update the key
-        document.querySelectorAll(".vn").forEach((n, i) => {
-          if (n.value) {
-            config[newName][n.value] =
-              parseFloat(document.querySelectorAll(".vp")[i].value) || 0;
+        const rows = [...document.querySelectorAll("#variantList .var-edit-row")];
+        const vars = {};
+        const renames = [];
+        for (const r of rows) {
+          const name = r.querySelector(".vn").value.trim();
+          if (!name) continue;
+          if (name in vars) {
+            alert(`Variety "${name}" is listed twice.`);
+            return;
           }
-        });
-
-        editingCategoryName = null; // Reset tracker
-        save();
-        initApp();
-        closeProductEditor();
-        renderManage();
-      }
-
-      function deleteSale(id) {
-        if (confirm("Delete this sale record?")) {
-          sales = sales.filter((s) => s.id !== id);
-          save(); // This automatically calls render() and updates the UI
+          vars[name] = round2(parseFloat(r.querySelector(".vp").value) || 0);
+          const orig = r.dataset.orig;
+          if (orig != null && orig !== name) renames.push([orig, name]);
         }
+        if (!Object.keys(vars).length) {
+          alert("Add at least one variety.");
+          return;
+        }
+
+        // Rebuild config keeping product order (renamed product stays in place)
+        if (oldName) {
+          const next = {};
+          for (const k of Object.keys(config)) next[k === oldName ? newName : k] = k === oldName ? vars : config[k];
+          config = next;
+        } else config[newName] = vars;
+
+        // Carry renames through to past sales so history stays grouped
+        if (oldName) {
+          const varMap = new Map(renames);
+          sales = sales.map((s) => {
+            if (s.cat !== oldName) return s;
+            const ns = { ...s, cat: newName };
+            if (varMap.has(s.var)) ns.var = varMap.get(s.var);
+            return ns;
+          });
+          if (meta.lastCat === oldName) {
+            meta.lastCat = newName;
+            saveMeta();
+          }
+        }
+
+        closeProductEditor();
+        save();
       }
 
       function deleteCfg(c) {
-        if (
-          confirm(
-            `Delete ALL data for ${c}? This won't delete past sales, but will remove it from the menu.`
-          )
-        ) {
-          delete config[c];
-          save();
-          initApp();
-          renderManage();
+        if (!config[c]) return;
+        const n = sales.filter((s) => s.cat === c).length;
+        const msg = n
+          ? `Delete "${c}" from your product menu?\n\nIts ${n} past sale${n > 1 ? "s" : ""} will be kept and shown as archived.`
+          : `Delete "${c}" from your product menu?`;
+        if (!confirm(msg)) return;
+        delete config[c];
+        save();
+      }
+
+      /* =====================================================
+         BACKUP / RESTORE / CSV
+         ===================================================== */
+      function stamp() {
+        const n = new Date();
+        const p = (x) => String(x).padStart(2, "0");
+        return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}_${p(n.getHours())}-${p(n.getMinutes())}`;
+      }
+
+      async function deliverFile(text, name, type) {
+        const blob = new Blob([text], { type });
+        // iOS Home Screen apps handle the share sheet far better than downloads
+        try {
+          const file = new File([blob], name, { type });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: name });
+            return true;
+          }
+        } catch (e) {
+          if (e && e.name === "AbortError") return false;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        return true;
+      }
+
+      async function exportJSON() {
+        // Same {config, sales} shape as before (extra fields are ignored by older versions)
+        const data = { config, sales, app: "SeRecord", version: 2, exportedAt: new Date().toISOString() };
+        const ok = await deliverFile(JSON.stringify(data, null, 2), `SeRecord_${stamp()}.json`, "application/json");
+        if (ok) {
+          meta.lastBackup = Date.now();
+          meta.salesAtBackup = sales.length;
+          saveMeta();
+          renderBackupStatus();
         }
       }
 
-      // --- BACKUP & RESTORE ---
-      function exportJSON() {
-        const b = new Blob([JSON.stringify({ config, sales }, null, 2)], {
-          type: "application/json",
-        });
-        const now = new Date();
-        const dateStr = `${now.getDate()}-${
-          now.getMonth() + 1
-        }-${now.getFullYear()}_${now.getHours()}-${now.getMinutes()}`;
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(b);
-        a.download = `SeRecord_${dateStr}.json`;
-        a.click();
+      function exportCSV() {
+        const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+        const rows = [...sales].sort((a, b) => dateKey(a).localeCompare(dateKey(b)));
+        const lines = [["Date", "Product", "Variety", "Count", "Unit Price", "Total"].join(",")];
+        rows.forEach((s) => lines.push([dateKey(s), q(s.cat), q(s.var), s.qty, s.unit.toFixed(2), s.total.toFixed(2)].join(",")));
+        deliverFile("﻿" + lines.join("\r\n"), `SeRecord_sales_${stamp()}.csv`, "text/csv");
       }
+
       function importJSON() {
-        // 1. Alert the user before any action is taken
-        const confirmOverwrite = confirm(
-          "Are you sure? This will delete all current products and sales data and replace them with the backup file."
-        );
-
-        if (!confirmOverwrite) return; // Exit if they click 'Cancel'
-
         const i = document.createElement("input");
         i.type = "file";
-        i.accept = ".json"; // Ensure only JSON files can be selected
-
+        i.accept = ".json,application/json";
         i.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
           const r = new FileReader();
           r.onload = () => {
+            let d;
             try {
-              const d = JSON.parse(r.result);
-
-              // Basic validation to ensure the file is compatible
-              if (d.config && d.sales) {
-                config = d.config;
-                sales = d.sales;
-
-                save(); // Commit to localStorage
-                initApp();
-                switchTab("breakdown");
-
-                alert("Data restored successfully.");
-              } else {
-                alert("Error: The selected file is not a valid backup.");
-              }
+              d = JSON.parse(r.result);
             } catch (err) {
               alert("Error: Could not read the file.");
+              return;
             }
+            if (!d || !isObj(d.config) || !Array.isArray(d.sales)) {
+              alert("Error: The selected file is not a valid backup.");
+              return;
+            }
+            const newCfg = normalizeConfig(d.config);
+            const newSales = d.sales.map(normalizeSale).filter(Boolean);
+            const ok = confirm(
+              `Replace ALL current data with this backup?\n\n` +
+                `Current: ${Object.keys(config).length} products, ${sales.length} sales\n` +
+                `Backup: ${Object.keys(newCfg).length} products, ${newSales.length} sales\n\n` +
+                `Your current data will be kept for one "Undo last restore".`
+            );
+            if (!ok) return;
+            try {
+              localStorage.setItem(KEY_UNDO, JSON.stringify({ config, sales, savedAt: Date.now() }));
+            } catch (err) {}
+            config = newCfg;
+            sales = newSales;
+            save();
+            switchTab("breakdown");
+            alert("Data restored successfully.");
           };
-          r.readAsText(e.target.files[0]);
+          r.readAsText(file);
         };
         i.click();
       }
 
-      window.onload = () => {
-        initApp();
-        render();
+      function undoRestore() {
+        const u = readStore(KEY_UNDO, null, isObj);
+        if (!u || !isObj(u.config) || !Array.isArray(u.sales)) return;
+        if (!confirm(`Go back to the data you had before the last restore (${u.sales.length} sales)?`)) return;
+        config = normalizeConfig(u.config);
+        sales = u.sales.map(normalizeSale).filter(Boolean);
+        localStorage.removeItem(KEY_UNDO);
+        save();
+      }
+
+      function renderBackupStatus() {
+        const el = $("backupStatus");
+        const last = Number(meta.lastBackup) || 0;
+        const days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+        const unsaved = sales.length - (Number(meta.salesAtBackup) || 0);
+        const stale = sales.length > 0 && (days === null || (days >= 7 && unsaved !== 0));
+        el.textContent = days === null ? "Never backed up" : days === 0 ? "Backed up today" : `Last backup ${days}d ago`;
+        el.classList.toggle("stale", stale);
+        $("backupDot").classList.toggle("on", stale);
+        $("btnUndoRestore").classList.toggle("hidden", localStorage.getItem(KEY_UNDO) == null);
+      }
+
+      /* =====================================================
+         WIRING
+         ===================================================== */
+      $("fab").onclick = () => openLogModal();
+      $("btnCloseLog").onclick = closeLogModal;
+      $("mainLogBtn").onclick = processSale;
+      $("selCategory").onchange = () => {
+        loadVariants();
+        autoFill();
       };
+      $("selVariant").onchange = autoFill;
+      $("numpad").onclick = (e) => {
+        const k = e.target.closest("[data-key]");
+        if (k) press(k.dataset.key);
+      };
+      document.querySelectorAll(".input-box[data-field]").forEach((b) => (b.onclick = () => setActiveField(b.dataset.field)));
+      document.querySelectorAll(".tab-item").forEach((t) => (t.onclick = () => switchTab(t.dataset.tab)));
+      $("periodSeg").onclick = (e) => {
+        const b = e.target.closest("[data-period]");
+        if (!b) return;
+        period = b.dataset.period;
+        meta.period = period;
+        saveMeta();
+        renderDashboard();
+      };
+      $("filterCat").onchange = renderHistory;
+      $("sortMode").onchange = renderHistory;
+      $("btnNewProduct").onclick = () => openProductEditor();
+      $("btnCloseEditor").onclick = closeProductEditor;
+      $("btnAddVar").onclick = () => addVarRow().querySelector(".vn").focus();
+      $("btnSaveProduct").onclick = saveConfig;
+      $("editorOverlay").onclick = (e) => {
+        if (e.target.id === "editorOverlay") closeProductEditor();
+      };
+      $("btnExport").onclick = exportJSON;
+      $("btnImport").onclick = importJSON;
+      $("btnCSV").onclick = exportCSV;
+      $("btnUndoRestore").onclick = undoRestore;
+      bindSwipe($("historyLog"));
+      bindSwipe($("manageList"));
+      document.addEventListener("touchstart", (e) => {
+        if (sw.open && !e.target.closest(".swipe-item")) closeOpenSwipe();
+      }, { passive: true });
+
+      renderAll();
+      updateFab();
+
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+      }
     </script>
   </body>
 </html>
