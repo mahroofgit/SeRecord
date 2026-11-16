@@ -918,6 +918,10 @@
       .inv-main {
         flex: 1;
       }
+      .inv-main .sale-sub {
+        white-space: normal;
+        line-height: 1.35;
+      }
       .stepper {
         display: flex;
         align-items: center;
@@ -1062,6 +1066,25 @@
         margin-top: 2px;
       }
 
+      .swatches {
+        position: relative;
+        width: 34px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+      .swatches .swatch {
+        position: absolute;
+        top: 1px;
+      }
+      .swatch.none {
+        background: transparent;
+        border-style: dashed;
+        box-shadow: none;
+      }
+      #stockSeg {
+        margin-bottom: 10px;
+      }
+
       .hidden {
         display: none !important;
       }
@@ -1110,25 +1133,30 @@
       <!-- ============ FILAMENT STOCK ============ -->
       <section id="view-stock" class="view hidden">
         <div class="hero">
-          <div class="hero-label">Filament stock value</div>
-          <div class="hero-total num">$<span id="stockValue">0.00</span></div>
+          <div class="hero-label">Total filament spend</div>
+          <div class="hero-total num">$<span id="spendTotal">0.00</span></div>
           <div class="hero-stats">
-            <div><span class="stat-label">Spools</span><span class="stat-val num" id="statSpools">0</span></div>
-            <div><span class="stat-label">Weight</span><span class="stat-val num" id="statKg">0 kg</span></div>
-            <div><span class="stat-label">Low / out</span><span class="stat-val num" id="statLow">0</span></div>
+            <div><span class="stat-label">In stock</span><span class="stat-val num" id="statOnHand">0</span></div>
+            <div><span class="stat-label">Spools bought</span><span class="stat-val num" id="statBought">0</span></div>
+            <div><span class="stat-label">Avg / spool</span><span class="stat-val num" id="statAvgSpool">$0.00</span></div>
           </div>
         </div>
-        <div class="filters">
+        <div class="seg two" id="stockSeg">
+          <button data-sview="stock" class="active">In stock</button>
+          <button data-sview="purchases">Purchases</button>
+        </div>
+        <div class="filters" id="stockFilters">
           <select class="std-select" id="stockFilter" style="flex: 1.2"></select>
           <select class="std-select" id="stockSort" style="flex: 1">
             <option value="brand">Brand A–Z</option>
             <option value="material">Material</option>
             <option value="low">Lowest stock</option>
             <option value="most">Most spools</option>
-            <option value="value">Highest value</option>
+            <option value="spend">Most spent</option>
           </select>
         </div>
         <div id="stockList" class="scroll has-fab"></div>
+        <div id="purchaseList" class="scroll has-fab hidden"></div>
       </section>
 
       <!-- ============ SETUP ============ -->
@@ -1153,7 +1181,7 @@
             </div>
             <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
           </div>
-          <div class="version">Sol3D v2.1 · data stays on this device</div>
+          <div class="version">Sol3D v2.2 · data stays on this device</div>
         </div>
       </section>
     </div>
@@ -1251,15 +1279,19 @@
       </div>
     </div>
 
-    <!-- ============ FILAMENT EDITOR ============ -->
+    <!-- ============ FILAMENT PURCHASE EDITOR ============ -->
     <div id="invOverlay">
       <div id="invEditor" role="dialog" aria-modal="true">
         <div class="modal-header">
-          <h3 id="invTitle">Add Filament</h3>
+          <h3 id="invTitle">Add Purchase</h3>
           <button class="close-btn" id="btnCloseInv" aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
+        <label class="date-row" style="background: var(--bg-2)">
+          <span>PURCHASE DATE</span>
+          <input type="date" id="purDate" />
+        </label>
         <div class="form-field">
           <div class="field-label">Brand</div>
           <select class="std-select" id="invBrand"></select>
@@ -1269,7 +1301,7 @@
           <select class="std-select" id="invType"></select>
         </div>
         <div class="form-field">
-          <div class="field-label">Colour</div>
+          <div class="field-label">Colour (optional)</div>
           <div class="color-row">
             <input type="color" id="invHex" value="#9ca3af" aria-label="Colour swatch" />
             <input class="std-input" id="invColor" placeholder="e.g. Black" autocomplete="off" />
@@ -1289,16 +1321,20 @@
             </select>
           </div>
           <div class="form-field">
-            <div class="field-label">Spools in stock</div>
+            <div class="field-label">Spools bought</div>
             <div class="qty-input">
               <button type="button" id="invQtyDec" aria-label="Less">−</button>
-              <input id="invQty" type="number" inputmode="numeric" min="0" step="1" value="1" />
+              <input id="invQty" type="number" inputmode="numeric" min="1" step="1" value="1" />
               <button type="button" id="invQtyInc" aria-label="More">+</button>
             </div>
           </div>
         </div>
+        <div class="field-label">Amount</div>
+        <div class="seg two" id="invBasisSeg" style="margin-bottom: 8px">
+          <button type="button" data-basis="each">Per spool</button>
+          <button type="button" data-basis="total">Total for all</button>
+        </div>
         <div class="form-field">
-          <div class="field-label">Price per spool</div>
           <div class="money-wrap">
             <input class="std-input" id="invPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" />
           </div>
@@ -1309,12 +1345,12 @@
         </div>
         <div class="cost-summary">
           <div>
-            <span class="stat-label">Final cost per spool</span>
-            <small id="invTaxNote">incl. $0.00 HST</small>
+            <span class="stat-label">Final cost</span>
+            <small id="invTaxNote">$0.00 per spool · incl. $0.00 HST</small>
           </div>
           <b class="num" id="invFinal">$0.00</b>
         </div>
-        <button class="primary-btn" id="btnSaveInv">SAVE FILAMENT</button>
+        <button class="primary-btn" id="btnSaveInv">ADD PURCHASE</button>
       </div>
     </div>
 
@@ -1405,10 +1441,16 @@
       let meta = readStore(KEY_META, {}, isObj);
 
       /* ---------- Filament stock ----------
-         inventory: { items: [{ id, brand, type, color, hex, weight, qty, price, taxMode, cost }],
-                      brands: [custom brands], types: [custom materials] }
-         price = what was entered; taxMode "pre" (13% added) or "incl"; cost = final per-spool cost */
+         inventory: {
+           purchases: [{ id, date, brand, type, color, hex, weight, spools, amount, basis, taxMode, total, each }],
+           used: { bucketKey: spools used },   // on hand = spools bought − used
+           brands: [custom brands], types: [custom materials]
+         }
+         A bucket = brand + material + spool size. amount = what was typed; basis "each" | "total";
+         taxMode "pre" (13% added) | "incl"; total/each = final costs incl. tax.
+         v2.1 stored { items: [...] } — those are converted to purchases once (kept in legacyItems). */
       const TAX_RATE = 0.13;
+      const DEFAULT_BRAND = "Bambu Lab";
       const PRESET_BRANDS = ["Bambu Lab", "Overture", "Sunlu", "Polymaker", "Elegoo", "Geeetech", "Duramic 3D", "eSun", "Creality", "Hatchbox", "Prusament", "Anycubic", "Jayo"];
       const GENERIC_BRAND = "Generic";
       const PRESET_TYPES = {
@@ -1419,27 +1461,58 @@
         Other: ["PC", "PA (Nylon)", "PA-CF", "PVA", "HIPS"],
       };
       const ALL_PRESET_TYPES = Object.values(PRESET_TYPES).flat();
-      const finalCost = (price, mode) => round2((Number(price) || 0) * (mode === "pre" ? 1 + TAX_RATE : 1));
+      const withTax = (amt, mode) => (Number(amt) || 0) * (mode === "pre" ? 1 + TAX_RATE : 1);
       const family = (t) => (String(t).toUpperCase().match(/^[A-Z]+/) || ["OTHER"])[0];
+      const bucketKey = (x) => `${x.brand}|${x.type}|${x.weight}`;
+      const isHex = (h) => /^#[0-9a-f]{6}$/i.test(h);
+
+      function normPurchase(p) {
+        if (!isObj(p)) return null;
+        const o = { ...p };
+        o.id = Number(p.id) || Date.now() + Math.floor(Math.random() * 1e6);
+        o.date = isISODate(p.date) ? p.date : localISO(new Date(o.id));
+        o.brand = String(p.brand || DEFAULT_BRAND);
+        o.type = String(p.type || "PLA Basic");
+        o.color = String(p.color ?? "");
+        o.hex = isHex(p.hex) ? p.hex : "";
+        o.weight = Number(p.weight) || 1000;
+        o.spools = Math.max(1, Math.round(Number(p.spools) || 1));
+        o.amount = Number(p.amount) || 0;
+        o.basis = p.basis === "total" ? "total" : "each";
+        o.taxMode = p.taxMode === "pre" ? "pre" : "incl";
+        o.total = Number(p.total) || round2(withTax(o.amount, o.taxMode) * (o.basis === "each" ? o.spools : 1));
+        o.each = Number(p.each) || round2(o.total / o.spools);
+        return o;
+      }
 
       function normalizeInventory(v) {
         const src = isObj(v) ? v : {};
-        const items = (Array.isArray(src.items) ? src.items : []).filter(isObj).map((it) => {
-          const o = { ...it };
-          o.id = Number(it.id) || Date.now() + Math.floor(Math.random() * 1e6);
-          o.brand = String(it.brand ?? GENERIC_BRAND) || GENERIC_BRAND;
-          o.type = String(it.type ?? "PLA Basic") || "PLA Basic";
-          o.color = String(it.color ?? "");
-          o.hex = /^#[0-9a-f]{6}$/i.test(it.hex) ? it.hex : "";
-          o.weight = Number(it.weight) || 1000;
-          o.qty = Math.max(0, Math.round(Number(it.qty) || 0));
-          o.price = Number(it.price) || 0;
-          o.taxMode = it.taxMode === "pre" ? "pre" : "incl";
-          o.cost = Number(it.cost) || finalCost(o.price, o.taxMode);
-          return o;
-        });
+        const out = { ...src };
+        let purchases = Array.isArray(src.purchases) ? src.purchases : [];
+        // One-time conversion of v2.1 stock items into purchases
+        if (!Array.isArray(src.purchases) && Array.isArray(src.items) && src.items.length) {
+          purchases = src.items
+            .filter((it) => isObj(it) && Number(it.qty) > 0)
+            .map((it) => {
+              const cost = Number(it.cost) || withTax(it.price, it.taxMode);
+              return {
+                id: Number(it.id) || undefined,
+                date: localISO(new Date(Number(it.id) || Date.now())),
+                brand: it.brand, type: it.type, color: it.color, hex: it.color ? it.hex : "",
+                weight: it.weight, spools: it.qty, amount: it.price, basis: "each",
+                taxMode: it.taxMode, each: round2(cost), total: round2(cost * Math.round(Number(it.qty))),
+              };
+            });
+          out.legacyItems = src.items;
+        }
+        delete out.items;
+        out.purchases = purchases.map(normPurchase).filter(Boolean);
+        out.used = {};
+        if (isObj(src.used)) for (const k of Object.keys(src.used)) out.used[k] = Math.round(Number(src.used[k]) || 0);
         const strs = (a) => (Array.isArray(a) ? [...new Set(a.map(String).filter(Boolean))] : []);
-        return { ...src, items, brands: strs(src.brands), types: strs(src.types) };
+        out.brands = strs(src.brands);
+        out.types = strs(src.types);
+        return out;
       }
       let inventory = normalizeInventory(readStore(KEY_INV, {}, isObj));
 
@@ -1910,7 +1983,7 @@
         container.addEventListener("click", (e) => {
           const btn = e.target.closest("[data-act]");
           if (btn) {
-            const { act, id, cat } = btn.dataset;
+            const { act, id, cat, key } = btn.dataset;
             if (!act.startsWith("inv-")) closeOpenSwipe();
             if (act === "edit-sale") {
               const s = sales.find((x) => x.id === Number(id));
@@ -1918,10 +1991,12 @@
             } else if (act === "del-sale") deleteSale(Number(id));
             else if (act === "edit-cfg") openProductEditor(cat);
             else if (act === "del-cfg") deleteCfg(cat);
-            else if (act === "inv-inc") adjustStock(Number(id), 1);
-            else if (act === "inv-dec") adjustStock(Number(id), -1);
-            else if (act === "edit-inv") openInvEditor(Number(id));
-            else if (act === "del-inv") deleteInv(Number(id));
+            else if (act === "inv-inc") adjustStock(key, 1);
+            else if (act === "inv-dec") adjustStock(key, -1);
+            else if (act === "bk-count") setStockCount(key);
+            else if (act === "bk-del") deleteBucket(key);
+            else if (act === "pur-edit") openInvEditor(Number(id));
+            else if (act === "pur-del") deletePurchase(Number(id));
             return;
           }
           // Tapping a row only closes an open swipe; editing is via swipe actions
@@ -2032,13 +2107,40 @@
       }
 
       /* =====================================================
-         FILAMENT STOCK
+         FILAMENT STOCK (purchases → buckets)
          ===================================================== */
-      let editingInvId = null;
+      let editingPurId = null;
       let invTaxMode = "pre";
+      let invBasis = "each";
+      let stockView = "stock";
+
+      function buckets() {
+        const map = new Map();
+        for (const p of inventory.purchases) {
+          const k = bucketKey(p);
+          let b = map.get(k);
+          if (!b) {
+            b = { key: k, brand: p.brand, type: p.type, weight: p.weight, bought: 0, spent: 0, colors: [], hexes: [], last: "" };
+            map.set(k, b);
+          }
+          b.bought += p.spools;
+          b.spent += p.total;
+          if (p.color && !b.colors.some((c) => c.toLowerCase() === p.color.toLowerCase())) {
+            b.colors.push(p.color);
+            if (p.hex) b.hexes.push(p.hex);
+          }
+          if (p.date > b.last) b.last = p.date;
+        }
+        for (const b of map.values()) {
+          b.used = inventory.used[b.key] || 0;
+          b.onHand = Math.max(0, b.bought - b.used);
+          b.avg = b.bought ? b.spent / b.bought : 0;
+        }
+        return [...map.values()];
+      }
 
       function brandList() {
-        const list = [...PRESET_BRANDS, ...inventory.brands, ...inventory.items.map((i) => i.brand)];
+        const list = [...PRESET_BRANDS, ...inventory.brands, ...inventory.purchases.map((i) => i.brand)];
         const uniq = [...new Set(list)].filter((b) => b !== GENERIC_BRAND);
         uniq.sort((a, b) => a.localeCompare(b));
         return [...uniq, GENERIC_BRAND];
@@ -2048,11 +2150,11 @@
         $("invBrand").innerHTML =
           brandList().map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join("") +
           `<option value="__custom">+ Add other brand…</option>`;
-        $("invBrand").value = selected && brandList().includes(selected) ? selected : brandList()[0];
+        $("invBrand").value = selected && brandList().includes(selected) ? selected : DEFAULT_BRAND;
       }
 
       function fillTypeSelect(selected) {
-        const custom = [...new Set([...inventory.types, ...inventory.items.map((i) => i.type)])].filter((t) => !ALL_PRESET_TYPES.includes(t));
+        const custom = [...new Set([...inventory.types, ...inventory.purchases.map((i) => i.type)])].filter((t) => !ALL_PRESET_TYPES.includes(t));
         let html = "";
         for (const [g, list] of Object.entries(PRESET_TYPES))
           html += `<optgroup label="${esc(g)}">${list.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}</optgroup>`;
@@ -2079,62 +2181,84 @@
         document.querySelectorAll("#invTaxSeg button").forEach((b) => b.classList.toggle("active", b.dataset.tax === invTaxMode));
         updateInvCost();
       }
-
-      function updateInvCost() {
-        const price = parseFloat($("invPrice").value) || 0;
-        const cost = finalCost(price, invTaxMode);
-        const tax = invTaxMode === "pre" ? cost - price : cost - cost / (1 + TAX_RATE);
-        $("invFinal").textContent = "$" + money(cost);
-        $("invTaxNote").textContent = `incl. $${money(tax)} HST (13%)`;
+      function setBasis(m) {
+        invBasis = m === "total" ? "total" : "each";
+        document.querySelectorAll("#invBasisSeg button").forEach((b) => b.classList.toggle("active", b.dataset.basis === invBasis));
+        $("invPrice").placeholder = invBasis === "total" ? "Total paid" : "Price per spool";
+        updateInvCost();
       }
 
-      function openInvEditor(id) {
-        const it = id != null ? inventory.items.find((x) => x.id === id) : null;
-        editingInvId = it ? it.id : null;
-        $("invTitle").textContent = it ? "Edit Filament" : "Add Filament";
-        fillBrandSelect(it ? it.brand : meta.lastBrand);
-        fillTypeSelect(it ? it.type : meta.lastType);
+      function calcPurchase() {
+        const spools = Math.max(1, Math.round(parseFloat($("invQty").value) || 1));
+        const amount = round2(parseFloat($("invPrice").value) || 0);
+        const gross = withTax(amount, invTaxMode) * (invBasis === "each" ? spools : 1);
+        const total = round2(gross);
+        const net = amount * (invBasis === "each" ? spools : 1);
+        const tax = invTaxMode === "pre" ? gross - net : gross - gross / (1 + TAX_RATE);
+        return { spools, amount, total, each: round2(total / spools), tax };
+      }
+
+      function updateInvCost() {
+        const c = calcPurchase();
+        $("invFinal").textContent = "$" + money(c.total);
+        $("invTaxNote").textContent = `${c.spools} × $${money(c.each)} per spool · incl. $${money(c.tax)} HST`;
+      }
+
+      function openInvEditor(id, preset) {
+        const p = id != null ? inventory.purchases.find((x) => x.id === id) : null;
+        const base = p || preset || null;
+        editingPurId = p ? p.id : null;
+        $("invTitle").textContent = p ? "Edit Purchase" : "Add Purchase";
+        $("btnSaveInv").textContent = p ? "SAVE CHANGES" : "ADD PURCHASE";
+        $("purDate").value = p ? p.date : localISO();
+        $("purDate").max = localISO();
+        fillBrandSelect(base ? base.brand : DEFAULT_BRAND);
+        fillTypeSelect(base ? base.type : meta.lastType);
         $("invBrand").dataset.prev = $("invBrand").value;
         $("invType").dataset.prev = $("invType").value;
-        $("invColor").value = it ? it.color : "";
-        $("invHex").value = it && it.hex ? it.hex : "#9ca3af";
-        $("invWeight").value = String(it ? it.weight : 1000);
+        $("invColor").value = p ? p.color : "";
+        $("invHex").value = p && p.hex ? p.hex : "#9ca3af";
+        $("invWeight").value = String(base ? base.weight : 1000);
         if (!$("invWeight").value) $("invWeight").value = "1000";
-        $("invQty").value = it ? it.qty : 1;
-        $("invPrice").value = it ? it.price : "";
-        setTaxMode(it ? it.taxMode : meta.lastTaxMode || "pre");
+        $("invQty").value = p ? p.spools : 1;
+        $("invPrice").value = p ? p.amount : "";
+        setBasis(p ? p.basis : "each");
+        setTaxMode(p ? p.taxMode : meta.lastTaxMode || "pre");
         $("invOverlay").classList.add("open");
       }
 
       function closeInvEditor() {
         $("invOverlay").classList.remove("open");
-        editingInvId = null;
+        editingPurId = null;
       }
 
       function saveInv() {
         const brand = $("invBrand").value;
         const type = $("invType").value;
         if (!brand || brand === "__custom" || !type || type === "__custom") return;
-        const qty = Math.max(0, Math.round(parseFloat($("invQty").value) || 0));
-        const price = round2(parseFloat($("invPrice").value) || 0);
+        const date = $("purDate").value;
+        if (!isISODate(date)) {
+          nudge($("purDate").parentElement);
+          return;
+        }
+        const c = calcPurchase();
+        if (c.amount <= 0) {
+          nudge($("invPrice"));
+          return;
+        }
         const color = $("invColor").value.trim();
-        const hex = $("invHex").value;
-        const weight = Number($("invWeight").value) || 1000;
-        const fields = { brand, type, color, hex, weight, qty, price, taxMode: invTaxMode, cost: finalCost(price, invTaxMode), updated: Date.now() };
-
-        const same = (x) => x.id !== editingInvId && x.brand === brand && x.type === type && x.weight === weight && x.color.toLowerCase() === color.toLowerCase();
-        const dup = inventory.items.find(same);
-
-        if (editingInvId != null) {
-          inventory.items = inventory.items.map((x) => (x.id === editingInvId ? { ...x, ...fields } : x));
-        } else if (dup && confirm(`You already have ${brand} ${type}${color ? " – " + color : ""}.\n\nAdd ${qty} spool${qty === 1 ? "" : "s"} to it (and update its price)?`)) {
-          inventory.items = inventory.items.map((x) => (x.id === dup.id ? { ...x, ...fields, color: x.color, qty: x.qty + qty } : x));
+        const fields = {
+          date, brand, type, color, hex: color ? $("invHex").value : "",
+          weight: Number($("invWeight").value) || 1000,
+          spools: c.spools, amount: c.amount, basis: invBasis, taxMode: invTaxMode, total: c.total, each: c.each,
+        };
+        if (editingPurId != null) {
+          inventory.purchases = inventory.purchases.map((x) => (x.id === editingPurId ? { ...x, ...fields } : x));
         } else {
           let id = Date.now();
-          while (inventory.items.some((x) => x.id === id)) id++;
-          inventory.items.push({ id, ...fields });
+          while (inventory.purchases.some((x) => x.id === id)) id++;
+          inventory.purchases.push({ id, ...fields });
         }
-        meta.lastBrand = brand;
         meta.lastType = type;
         meta.lastTaxMode = invTaxMode;
         saveMeta();
@@ -2142,84 +2266,170 @@
         save();
       }
 
-      function adjustStock(id, delta) {
-        const it = inventory.items.find((x) => x.id === id);
-        if (!it) return;
-        const q = Math.max(0, it.qty + delta);
-        if (q === it.qty) return;
-        it.qty = q;
-        it.updated = Date.now();
+      function adjustStock(key, delta) {
+        const b = buckets().find((x) => x.key === key);
+        if (!b) return;
+        // − uses a spool, + puts one back (can't exceed what's been bought)
+        if (delta < 0 && b.onHand <= 0) return;
+        if (delta > 0 && b.used <= 0) {
+          if (confirm("All spools you bought are already in stock.\n\nLog a new purchase for this filament?"))
+            openInvEditor(null, { brand: b.brand, type: b.type, weight: b.weight });
+          return;
+        }
+        inventory.used[key] = b.used - delta;
         save();
       }
 
-      function deleteInv(id) {
-        const it = inventory.items.find((x) => x.id === id);
-        if (!it || !confirm(`Remove ${it.brand} ${it.type}${it.color ? " – " + it.color : ""} from stock?`)) return;
-        inventory.items = inventory.items.filter((x) => x.id !== id);
+      function setStockCount(key) {
+        const b = buckets().find((x) => x.key === key);
+        if (!b) return;
+        const v = prompt(`Spools of ${b.brand} ${b.type} on hand right now (bought ${b.bought}):`, String(b.onHand));
+        if (v == null) return;
+        const n = Math.round(Number(v));
+        if (!Number.isFinite(n) || n < 0 || n > b.bought) {
+          alert(`Enter a number from 0 to ${b.bought}. To add more, log a purchase.`);
+          return;
+        }
+        inventory.used[key] = b.bought - n;
+        save();
+      }
+
+      function deleteBucket(key) {
+        const b = buckets().find((x) => x.key === key);
+        if (!b) return;
+        const n = inventory.purchases.filter((p) => bucketKey(p) === key).length;
+        if (!confirm(`Delete ${b.brand} ${b.type} (${weightLabel(b.weight)}) and its ${n} purchase${n === 1 ? "" : "s"}?\n\nThis also removes $${money(b.spent)} from total spend.`)) return;
+        inventory.purchases = inventory.purchases.filter((p) => bucketKey(p) !== key);
+        delete inventory.used[key];
+        save();
+      }
+
+      function deletePurchase(id) {
+        const p = inventory.purchases.find((x) => x.id === id);
+        if (!p || !confirm(`Delete this purchase?\n\n${p.brand} ${p.type} · ${p.spools} spool${p.spools === 1 ? "" : "s"} · $${money(p.total)}`)) return;
+        inventory.purchases = inventory.purchases.filter((x) => x.id !== id);
+        // keep "used" within what's still bought
+        const k = bucketKey(p);
+        const bought = inventory.purchases.filter((x) => bucketKey(x) === k).reduce((a, x) => a + x.spools, 0);
+        if (!bought) delete inventory.used[k];
+        else if ((inventory.used[k] || 0) > bought) inventory.used[k] = bought;
         save();
       }
 
       const weightLabel = (g) => (g >= 1000 ? `${round2(g / 1000)} kg` : `${g} g`);
 
+      function swatchHTML(hexes) {
+        if (!hexes.length) return `<div class="swatches"><span class="swatch none"></span></div>`;
+        return `<div class="swatches">${hexes
+          .slice(0, 3)
+          .map((h, i) => `<span class="swatch" style="background:${h};left:${i * 5}px;z-index:${3 - i}"></span>`)
+          .join("")}</div>`;
+      }
+
       function renderStock() {
-        const items = inventory.items;
-        const value = items.reduce((a, i) => a + i.qty * i.cost, 0);
-        const spools = items.reduce((a, i) => a + i.qty, 0);
-        const kg = items.reduce((a, i) => a + (i.qty * i.weight) / 1000, 0);
-        const low = items.filter((i) => i.qty <= 1).length;
-        $("stockValue").textContent = money(value);
-        $("statSpools").textContent = spools;
-        $("statKg").textContent = `${round2(kg)} kg`;
-        $("statLow").textContent = low;
+        const all = buckets();
+        const spent = inventory.purchases.reduce((a, p) => a + p.total, 0);
+        const bought = inventory.purchases.reduce((a, p) => a + p.spools, 0);
+        $("spendTotal").textContent = money(spent);
+        $("statOnHand").textContent = all.reduce((a, b) => a + b.onHand, 0);
+        $("statBought").textContent = bought;
+        $("statAvgSpool").textContent = "$" + money(bought ? spent / bought : 0);
+
+        document.querySelectorAll("#stockSeg button").forEach((b) => b.classList.toggle("active", b.dataset.sview === stockView));
+        $("stockList").classList.toggle("hidden", stockView !== "stock");
+        $("stockFilters").classList.toggle("hidden", stockView !== "stock");
+        $("purchaseList").classList.toggle("hidden", stockView !== "purchases");
+        renderPurchases();
 
         const sel = $("stockFilter");
         const prev = sel.value || "All";
-        const fams = [...new Set(items.map((i) => family(i.type)))].sort();
+        const fams = [...new Set(all.map((i) => family(i.type)))].sort();
         sel.innerHTML = `<option value="All">All materials</option>` + fams.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join("");
         sel.value = fams.includes(prev) ? prev : "All";
 
-        if (!items.length) {
-          $("stockList").innerHTML = `<div class="empty"><strong>No filament yet</strong>Tap + to add your spools.</div>`;
+        if (!all.length) {
+          $("stockList").innerHTML = `<div class="empty"><strong>No filament yet</strong>Tap + to log a filament purchase.</div>`;
           return;
         }
         const f = sel.value;
-        const list = items.filter((i) => f === "All" || family(i.type) === f);
+        const list = all.filter((i) => f === "All" || family(i.type) === f);
         const mode = $("stockSort").value;
-        const byName = (a, b) => a.brand.localeCompare(b.brand) || a.type.localeCompare(b.type) || a.color.localeCompare(b.color);
+        const byName = (a, b) => a.brand.localeCompare(b.brand) || a.type.localeCompare(b.type) || a.weight - b.weight;
         if (mode === "material") list.sort((a, b) => a.type.localeCompare(b.type) || byName(a, b));
-        else if (mode === "low") list.sort((a, b) => a.qty - b.qty || byName(a, b));
-        else if (mode === "most") list.sort((a, b) => b.qty - a.qty || byName(a, b));
-        else if (mode === "value") list.sort((a, b) => b.qty * b.cost - a.qty * a.cost || byName(a, b));
+        else if (mode === "low") list.sort((a, b) => a.onHand - b.onHand || byName(a, b));
+        else if (mode === "most") list.sort((a, b) => b.onHand - a.onHand || byName(a, b));
+        else if (mode === "spend") list.sort((a, b) => b.spent - a.spent || byName(a, b));
         else list.sort(byName);
 
         $("stockList").innerHTML = list
-          .map((i) => {
-            const state = i.qty === 0 ? "out" : i.qty === 1 ? "low" : "";
-            const tag = i.qty === 0 ? '<span class="tag out">out</span>' : i.qty === 1 ? '<span class="tag">low</span>' : "";
-            const line1 = [i.brand, i.color].filter(Boolean).map(esc).join(" · ");
-            const line2 = `${weightLabel(i.weight)} • $${money(i.cost)} each` + (i.qty > 1 ? ` • $${money(i.qty * i.cost)}` : "");
+          .map((b) => {
+            const state = b.onHand === 0 ? "out" : b.onHand === 1 ? "low" : "";
+            const tag = b.onHand === 0 ? '<span class="tag out">out</span>' : b.onHand === 1 ? '<span class="tag">low</span>' : "";
+            const line1 = [b.brand, b.colors.join(", ")].filter(Boolean).map(esc).join(" · ");
+            const line2 = `${weightLabel(b.weight)} • avg $${money(b.avg)} • ${b.bought} bought`;
+            const k = esc(b.key);
             return `
             <div class="swipe-item">
               <div class="swipe-actions">
-                <button class="action-btn edit" data-act="edit-inv" data-id="${i.id}">Edit</button>
-                <button class="action-btn del" data-act="del-inv" data-id="${i.id}">Del</button>
+                <button class="action-btn edit" data-act="bk-count" data-key="${k}">Count</button>
+                <button class="action-btn del" data-act="bk-del" data-key="${k}">Del</button>
               </div>
               <div class="swipe-content">
-                <span class="swatch" style="background:${i.hex || "transparent"}"></span>
+                ${swatchHTML(b.hexes)}
                 <div class="sale-main inv-main">
-                  <span class="sale-title">${esc(i.type)}${tag}</span>
+                  <span class="sale-title">${esc(b.type)}${tag}</span>
                   <span class="sale-sub">${line1}</span>
                   <span class="sale-sub num">${line2}</span>
                 </div>
                 <div class="stepper ${state}">
-                  <button data-act="inv-dec" data-id="${i.id}" aria-label="One less spool">−</button>
-                  <b class="num">${i.qty}</b>
-                  <button data-act="inv-inc" data-id="${i.id}" aria-label="One more spool">+</button>
+                  <button data-act="inv-dec" data-key="${k}" aria-label="Used one spool">−</button>
+                  <b class="num">${b.onHand}</b>
+                  <button data-act="inv-inc" data-key="${k}" aria-label="Put one spool back">+</button>
                 </div>
               </div>
             </div>`;
           })
           .join("");
+      }
+
+      function renderPurchases() {
+        const list = [...inventory.purchases].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+        if (!list.length) {
+          $("purchaseList").innerHTML = `<div class="empty"><strong>No purchases yet</strong>Tap + to log a filament purchase.</div>`;
+          return;
+        }
+        const monthTotals = {};
+        list.forEach((p) => (monthTotals[p.date.slice(0, 7)] = (monthTotals[p.date.slice(0, 7)] || 0) + p.total));
+        let last = null;
+        let html = "";
+        for (const p of list) {
+          const m = p.date.slice(0, 7);
+          if (m !== last) {
+            last = m;
+            const [y, mo] = m.split("-");
+            html += `<div class="day-sep"><span>${MONTHS[Number(mo) - 1]} ${y}</span><span class="num">$${money(monthTotals[m])}</span></div>`;
+          }
+          const sub = [fmtDate(p.date), p.brand, p.color, weightLabel(p.weight)].filter(Boolean).map(esc).join(" • ");
+          html += `
+            <div class="swipe-item">
+              <div class="swipe-actions">
+                <button class="action-btn edit" data-act="pur-edit" data-id="${p.id}">Edit</button>
+                <button class="action-btn del" data-act="pur-del" data-id="${p.id}">Del</button>
+              </div>
+              <div class="swipe-content">
+                ${swatchHTML(p.hex ? [p.hex] : [])}
+                <div class="sale-main inv-main">
+                  <span class="sale-title">${esc(p.type)} · ${p.spools}x</span>
+                  <span class="sale-sub">${sub}</span>
+                </div>
+                <div class="sale-amt num">
+                  <b>$${money(p.total)}</b>
+                  ${p.spools > 1 ? `<small>@ $${money(p.each)}</small>` : ""}
+                </div>
+              </div>
+            </div>`;
+        }
+        $("purchaseList").innerHTML = html;
       }
 
       /* =====================================================
@@ -2298,7 +2508,7 @@
             const newSales = d.sales.map(normalizeSale).filter(Boolean);
             const hasInv = isObj(d.inventory);
             const newInv = hasInv ? normalizeInventory(d.inventory) : inventory;
-            const spoolTxt = (inv) => `${inv.items.length} filaments`;
+            const spoolTxt = (inv) => `${inv.purchases.length} filament purchases`;
             const ok = confirm(
               `Replace ALL current data with this backup?\n\n` +
                 `Current: ${Object.keys(config).length} products, ${sales.length} sales, ${spoolTxt(inventory)}\n` +
@@ -2364,12 +2574,31 @@
         else e.target.dataset.prev = e.target.value;
       };
       $("invPrice").oninput = updateInvCost;
+      $("invQty").oninput = updateInvCost;
+      $("invBasisSeg").onclick = (e) => {
+        const b = e.target.closest("[data-basis]");
+        if (b) setBasis(b.dataset.basis);
+      };
+      $("stockSeg").onclick = (e) => {
+        const b = e.target.closest("[data-sview]");
+        if (!b) return;
+        stockView = b.dataset.sview;
+        closeOpenSwipe(false);
+        renderStock();
+      };
+      bindSwipe($("purchaseList"));
       $("invTaxSeg").onclick = (e) => {
         const b = e.target.closest("[data-tax]");
         if (b) setTaxMode(b.dataset.tax);
       };
-      $("invQtyDec").onclick = () => ($("invQty").value = Math.max(0, (parseInt($("invQty").value) || 0) - 1));
-      $("invQtyInc").onclick = () => ($("invQty").value = (parseInt($("invQty").value) || 0) + 1);
+      $("invQtyDec").onclick = () => {
+        $("invQty").value = Math.max(1, (parseInt($("invQty").value) || 1) - 1);
+        updateInvCost();
+      };
+      $("invQtyInc").onclick = () => {
+        $("invQty").value = (parseInt($("invQty").value) || 0) + 1;
+        updateInvCost();
+      };
       $("stockFilter").onchange = renderStock;
       $("stockSort").onchange = renderStock;
       bindSwipe($("stockList"));
