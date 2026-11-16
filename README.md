@@ -16,10 +16,11 @@ All data lives in the device's `localStorage`:
 |---|---|
 | `3D_CFG_v21` | `{ "Product": { "Variety": defaultPrice } }` |
 | `3D_SLS_v21` | `[{ id, cat, var, qty, unit, total, manualDate: "YYYY-MM-DD", ts, rawTs }]` |
+| `3D_INV_v1` | filament stock: `{ items: [{ id, brand, type, color, hex, weight, qty, price, taxMode, cost }], brands: [], types: [] }` (`taxMode` is `"pre"` or `"incl"`; `cost` = final per-spool cost incl. 13% tax) |
 | `SeRecord_meta` | UI prefs + last backup time (safe to lose) |
 | `SeRecord_preRestore` | copy of data from before the last JSON restore |
 
-A backup file is `{ config, sales }` plus optional extra fields. Rules for future changes:
+A backup file is `{ config, sales }` plus optional extra fields (`inventory` since v2.1). Restoring a backup without `inventory` keeps the current stock. Rules for future changes:
 - Never rename the two `*_v21` keys or remove fields. Only add new optional fields.
 - Older sales may lack `manualDate`, so always read dates through `dateKey()`.
 - Anything read from storage or a backup goes through `normalizeConfig()` / `normalizeSale()`.

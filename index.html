@@ -799,7 +799,8 @@
       }
 
       /* ---------- PRODUCT EDITOR ---------- */
-      #editorOverlay {
+      #editorOverlay,
+      #invOverlay {
         position: fixed;
         inset: 0;
         z-index: 700;
@@ -811,10 +812,12 @@
         justify-content: center;
         padding: calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px);
       }
-      #editorOverlay.open {
+      #editorOverlay.open,
+      #invOverlay.open {
         display: flex;
       }
-      #productEditor {
+      #productEditor,
+      #invEditor {
         width: 100%;
         max-width: 460px;
         max-height: 100%;
@@ -825,7 +828,8 @@
         padding: 18px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
       }
-      #productEditor h3 {
+      #productEditor h3,
+      #invEditor h3 {
         margin: 0;
         font-size: 1.15rem;
       }
@@ -894,11 +898,168 @@
         font-size: 0.85rem;
         margin: 4px 0 4px;
       }
-      #productEditor .primary-btn {
+      #productEditor .primary-btn,
+      #invEditor .primary-btn {
         background: var(--edit);
         color: #082f49;
         min-height: 52px;
         font-size: 1rem;
+      }
+
+      /* ---------- FILAMENT STOCK ---------- */
+      .swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        border: 2px solid rgba(255, 255, 255, 0.18);
+        box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.25);
+      }
+      .inv-main {
+        flex: 1;
+      }
+      .stepper {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .stepper button {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: none;
+        color: var(--text);
+        font-size: 1.25rem;
+        font-weight: 700;
+        padding: 0;
+      }
+      .stepper button:active {
+        background: var(--card-2);
+      }
+      .stepper b {
+        min-width: 26px;
+        text-align: center;
+        font-size: 1rem;
+      }
+      .stepper.low b {
+        color: var(--warn);
+      }
+      .stepper.out b {
+        color: var(--danger);
+      }
+      .tag.out {
+        color: var(--danger);
+        border-color: rgba(253, 164, 175, 0.4);
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .form-field {
+        margin-bottom: 12px;
+        min-width: 0;
+      }
+      #invEditor .std-select,
+      #invEditor .std-input {
+        background-color: var(--bg-2);
+        height: 48px;
+        font-size: 1rem;
+      }
+      .color-row {
+        display: flex;
+        gap: 8px;
+      }
+      .color-row input[type="color"] {
+        flex-shrink: 0;
+        width: 52px;
+        height: 48px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-2);
+        padding: 5px;
+      }
+      .color-row input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+      .color-row input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 8px;
+      }
+      .qty-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 48px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .qty-input button {
+        width: 44px;
+        height: 100%;
+        border: none;
+        background: none;
+        color: var(--text);
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      .qty-input input {
+        width: 100%;
+        min-width: 0;
+        background: none;
+        border: none;
+        color: var(--text);
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 800;
+        outline: none;
+        user-select: text;
+        -webkit-user-select: text;
+      }
+      .money-wrap {
+        position: relative;
+      }
+      .money-wrap::before {
+        content: "$";
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .money-wrap .std-input {
+        padding-left: 24px;
+      }
+      .seg.two {
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: 12px;
+      }
+      .cost-summary {
+        background: var(--accent-dim);
+        border: 1px solid rgba(134, 239, 172, 0.22);
+        border-radius: 12px;
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .cost-summary b {
+        color: var(--accent);
+        font-size: 1.15rem;
+      }
+      .cost-summary small {
+        display: block;
+        color: var(--sub);
+        font-size: 0.68rem;
+        margin-top: 2px;
       }
 
       .hidden {
@@ -946,6 +1107,30 @@
         <div id="historyLog" class="scroll has-fab"></div>
       </section>
 
+      <!-- ============ FILAMENT STOCK ============ -->
+      <section id="view-stock" class="view hidden">
+        <div class="hero">
+          <div class="hero-label">Filament stock value</div>
+          <div class="hero-total num">$<span id="stockValue">0.00</span></div>
+          <div class="hero-stats">
+            <div><span class="stat-label">Spools</span><span class="stat-val num" id="statSpools">0</span></div>
+            <div><span class="stat-label">Weight</span><span class="stat-val num" id="statKg">0 kg</span></div>
+            <div><span class="stat-label">Low / out</span><span class="stat-val num" id="statLow">0</span></div>
+          </div>
+        </div>
+        <div class="filters">
+          <select class="std-select" id="stockFilter" style="flex: 1.2"></select>
+          <select class="std-select" id="stockSort" style="flex: 1">
+            <option value="brand">Brand A–Z</option>
+            <option value="material">Material</option>
+            <option value="low">Lowest stock</option>
+            <option value="most">Most spools</option>
+            <option value="value">Highest value</option>
+          </select>
+        </div>
+        <div id="stockList" class="scroll has-fab"></div>
+      </section>
+
       <!-- ============ SETUP ============ -->
       <section id="view-setup" class="view hidden">
         <div class="view-title">
@@ -968,7 +1153,7 @@
             </div>
             <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
           </div>
-          <div class="version">Sol3D v2 · data stays on this device</div>
+          <div class="version">Sol3D v2.1 · data stays on this device</div>
         </div>
       </section>
     </div>
@@ -985,6 +1170,10 @@
       <button id="tab-history" class="tab-item" data-tab="history">
         <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" /></svg>
         <span>Log</span>
+      </button>
+      <button id="tab-stock" class="tab-item" data-tab="stock">
+        <svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 110 20 10 10 0 010-20zm0 5.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zm0 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" /></svg>
+        <span>Stock</span>
       </button>
       <button id="tab-setup" class="tab-item" data-tab="setup">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" /></svg>
@@ -1062,6 +1251,73 @@
       </div>
     </div>
 
+    <!-- ============ FILAMENT EDITOR ============ -->
+    <div id="invOverlay">
+      <div id="invEditor" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 id="invTitle">Add Filament</h3>
+          <button class="close-btn" id="btnCloseInv" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <div class="form-field">
+          <div class="field-label">Brand</div>
+          <select class="std-select" id="invBrand"></select>
+        </div>
+        <div class="form-field">
+          <div class="field-label">Material</div>
+          <select class="std-select" id="invType"></select>
+        </div>
+        <div class="form-field">
+          <div class="field-label">Colour</div>
+          <div class="color-row">
+            <input type="color" id="invHex" value="#9ca3af" aria-label="Colour swatch" />
+            <input class="std-input" id="invColor" placeholder="e.g. Black" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <div class="field-label">Spool size</div>
+            <select class="std-select" id="invWeight">
+              <option value="250">250 g</option>
+              <option value="500">500 g</option>
+              <option value="750">750 g</option>
+              <option value="1000">1 kg</option>
+              <option value="2000">2 kg</option>
+              <option value="3000">3 kg</option>
+              <option value="5000">5 kg</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <div class="field-label">Spools in stock</div>
+            <div class="qty-input">
+              <button type="button" id="invQtyDec" aria-label="Less">−</button>
+              <input id="invQty" type="number" inputmode="numeric" min="0" step="1" value="1" />
+              <button type="button" id="invQtyInc" aria-label="More">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-field">
+          <div class="field-label">Price per spool</div>
+          <div class="money-wrap">
+            <input class="std-input" id="invPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="seg two" id="invTaxSeg">
+          <button type="button" data-tax="pre">Before tax (+13%)</button>
+          <button type="button" data-tax="incl">Tax included</button>
+        </div>
+        <div class="cost-summary">
+          <div>
+            <span class="stat-label">Final cost per spool</span>
+            <small id="invTaxNote">incl. $0.00 HST</small>
+          </div>
+          <b class="num" id="invFinal">$0.00</b>
+        </div>
+        <button class="primary-btn" id="btnSaveInv">SAVE FILAMENT</button>
+      </div>
+    </div>
+
     <script>
       "use strict";
 
@@ -1073,7 +1329,8 @@
       const KEY_CFG = "3D_CFG_v21";
       const KEY_SLS = "3D_SLS_v21";
       const KEY_META = "SeRecord_meta";
-      const KEY_UNDO = "SeRecord_preRestore"; // keep key names: existing data lives here
+      const KEY_UNDO = "SeRecord_preRestore";
+      const KEY_INV = "3D_INV_v1"; // keep key names: existing data lives here
       const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const ACTION_W = 140;
 
@@ -1147,6 +1404,45 @@
       let sales = readStore(KEY_SLS, [], Array.isArray).map(normalizeSale).filter(Boolean);
       let meta = readStore(KEY_META, {}, isObj);
 
+      /* ---------- Filament stock ----------
+         inventory: { items: [{ id, brand, type, color, hex, weight, qty, price, taxMode, cost }],
+                      brands: [custom brands], types: [custom materials] }
+         price = what was entered; taxMode "pre" (13% added) or "incl"; cost = final per-spool cost */
+      const TAX_RATE = 0.13;
+      const PRESET_BRANDS = ["Bambu Lab", "Overture", "Sunlu", "Polymaker", "Elegoo", "Geeetech", "Duramic 3D", "eSun", "Creality", "Hatchbox", "Prusament", "Anycubic", "Jayo"];
+      const GENERIC_BRAND = "Generic";
+      const PRESET_TYPES = {
+        PLA: ["PLA Basic", "PLA+", "PLA Matte", "PLA Silk", "PLA Silk Multicolour", "PLA High Speed", "PLA-CF", "PLA Wood", "PLA Marble", "PLA Glow", "PLA Sparkle", "PLA Translucent"],
+        PETG: ["PETG Basic", "PETG Matte", "PETG HF", "PETG-CF", "PETG Translucent"],
+        TPU: ["TPU 95A", "TPU 90A", "TPU 85A"],
+        "ABS / ASA": ["ABS", "ABS+", "ASA"],
+        Other: ["PC", "PA (Nylon)", "PA-CF", "PVA", "HIPS"],
+      };
+      const ALL_PRESET_TYPES = Object.values(PRESET_TYPES).flat();
+      const finalCost = (price, mode) => round2((Number(price) || 0) * (mode === "pre" ? 1 + TAX_RATE : 1));
+      const family = (t) => (String(t).toUpperCase().match(/^[A-Z]+/) || ["OTHER"])[0];
+
+      function normalizeInventory(v) {
+        const src = isObj(v) ? v : {};
+        const items = (Array.isArray(src.items) ? src.items : []).filter(isObj).map((it) => {
+          const o = { ...it };
+          o.id = Number(it.id) || Date.now() + Math.floor(Math.random() * 1e6);
+          o.brand = String(it.brand ?? GENERIC_BRAND) || GENERIC_BRAND;
+          o.type = String(it.type ?? "PLA Basic") || "PLA Basic";
+          o.color = String(it.color ?? "");
+          o.hex = /^#[0-9a-f]{6}$/i.test(it.hex) ? it.hex : "";
+          o.weight = Number(it.weight) || 1000;
+          o.qty = Math.max(0, Math.round(Number(it.qty) || 0));
+          o.price = Number(it.price) || 0;
+          o.taxMode = it.taxMode === "pre" ? "pre" : "incl";
+          o.cost = Number(it.cost) || finalCost(o.price, o.taxMode);
+          return o;
+        });
+        const strs = (a) => (Array.isArray(a) ? [...new Set(a.map(String).filter(Boolean))] : []);
+        return { ...src, items, brands: strs(src.brands), types: strs(src.types) };
+      }
+      let inventory = normalizeInventory(readStore(KEY_INV, {}, isObj));
+
       function saveMeta() {
         try {
           localStorage.setItem(KEY_META, JSON.stringify(meta));
@@ -1157,6 +1453,7 @@
         try {
           localStorage.setItem(KEY_CFG, JSON.stringify(config));
           localStorage.setItem(KEY_SLS, JSON.stringify(sales));
+          localStorage.setItem(KEY_INV, JSON.stringify(inventory));
         } catch (e) {
           alert("Could not save — device storage is full. Please back up your data now.");
         }
@@ -1183,7 +1480,7 @@
       function switchTab(tab) {
         currentTab = tab;
         document.querySelectorAll(".tab-item").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
-        ["breakdown", "history", "setup"].forEach((k) => $("view-" + k).classList.toggle("hidden", k !== tab));
+        ["breakdown", "history", "stock", "setup"].forEach((k) => $("view-" + k).classList.toggle("hidden", k !== tab));
         updateFab();
         closeOpenSwipe(false);
         renderAll();
@@ -1192,6 +1489,7 @@
       function updateFab() {
         const hide = currentTab === "setup" || $("logModal").classList.contains("open");
         $("fab").style.display = hide ? "none" : "flex";
+        $("fab").setAttribute("aria-label", currentTab === "stock" ? "Add filament" : "Log sale");
       }
 
       /* =====================================================
@@ -1383,6 +1681,7 @@
         renderFilterOptions();
         renderHistory();
         renderManage();
+        renderStock();
         renderBackupStatus();
       }
 
@@ -1612,13 +1911,17 @@
           const btn = e.target.closest("[data-act]");
           if (btn) {
             const { act, id, cat } = btn.dataset;
-            closeOpenSwipe();
+            if (!act.startsWith("inv-")) closeOpenSwipe();
             if (act === "edit-sale") {
               const s = sales.find((x) => x.id === Number(id));
               if (s) openLogModal(s);
             } else if (act === "del-sale") deleteSale(Number(id));
             else if (act === "edit-cfg") openProductEditor(cat);
             else if (act === "del-cfg") deleteCfg(cat);
+            else if (act === "inv-inc") adjustStock(Number(id), 1);
+            else if (act === "inv-dec") adjustStock(Number(id), -1);
+            else if (act === "edit-inv") openInvEditor(Number(id));
+            else if (act === "del-inv") deleteInv(Number(id));
             return;
           }
           // Tapping a row only closes an open swipe; editing is via swipe actions
@@ -1729,6 +2032,197 @@
       }
 
       /* =====================================================
+         FILAMENT STOCK
+         ===================================================== */
+      let editingInvId = null;
+      let invTaxMode = "pre";
+
+      function brandList() {
+        const list = [...PRESET_BRANDS, ...inventory.brands, ...inventory.items.map((i) => i.brand)];
+        const uniq = [...new Set(list)].filter((b) => b !== GENERIC_BRAND);
+        uniq.sort((a, b) => a.localeCompare(b));
+        return [...uniq, GENERIC_BRAND];
+      }
+
+      function fillBrandSelect(selected) {
+        $("invBrand").innerHTML =
+          brandList().map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join("") +
+          `<option value="__custom">+ Add other brand…</option>`;
+        $("invBrand").value = selected && brandList().includes(selected) ? selected : brandList()[0];
+      }
+
+      function fillTypeSelect(selected) {
+        const custom = [...new Set([...inventory.types, ...inventory.items.map((i) => i.type)])].filter((t) => !ALL_PRESET_TYPES.includes(t));
+        let html = "";
+        for (const [g, list] of Object.entries(PRESET_TYPES))
+          html += `<optgroup label="${esc(g)}">${list.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}</optgroup>`;
+        if (custom.length) html += `<optgroup label="Custom">${custom.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}</optgroup>`;
+        html += `<option value="__custom">+ Add other material…</option>`;
+        $("invType").innerHTML = html;
+        $("invType").value = selected || "PLA Basic";
+        if (!$("invType").value) $("invType").value = "PLA Basic";
+      }
+
+      function pickCustom(selectEl, listKey, label, fill) {
+        const name = (prompt(`New ${label} name:`) || "").trim();
+        if (!name) {
+          fill(selectEl.dataset.prev);
+          return;
+        }
+        if (!inventory[listKey].includes(name)) inventory[listKey].push(name);
+        fill(name);
+        selectEl.dataset.prev = name;
+      }
+
+      function setTaxMode(m) {
+        invTaxMode = m === "incl" ? "incl" : "pre";
+        document.querySelectorAll("#invTaxSeg button").forEach((b) => b.classList.toggle("active", b.dataset.tax === invTaxMode));
+        updateInvCost();
+      }
+
+      function updateInvCost() {
+        const price = parseFloat($("invPrice").value) || 0;
+        const cost = finalCost(price, invTaxMode);
+        const tax = invTaxMode === "pre" ? cost - price : cost - cost / (1 + TAX_RATE);
+        $("invFinal").textContent = "$" + money(cost);
+        $("invTaxNote").textContent = `incl. $${money(tax)} HST (13%)`;
+      }
+
+      function openInvEditor(id) {
+        const it = id != null ? inventory.items.find((x) => x.id === id) : null;
+        editingInvId = it ? it.id : null;
+        $("invTitle").textContent = it ? "Edit Filament" : "Add Filament";
+        fillBrandSelect(it ? it.brand : meta.lastBrand);
+        fillTypeSelect(it ? it.type : meta.lastType);
+        $("invBrand").dataset.prev = $("invBrand").value;
+        $("invType").dataset.prev = $("invType").value;
+        $("invColor").value = it ? it.color : "";
+        $("invHex").value = it && it.hex ? it.hex : "#9ca3af";
+        $("invWeight").value = String(it ? it.weight : 1000);
+        if (!$("invWeight").value) $("invWeight").value = "1000";
+        $("invQty").value = it ? it.qty : 1;
+        $("invPrice").value = it ? it.price : "";
+        setTaxMode(it ? it.taxMode : meta.lastTaxMode || "pre");
+        $("invOverlay").classList.add("open");
+      }
+
+      function closeInvEditor() {
+        $("invOverlay").classList.remove("open");
+        editingInvId = null;
+      }
+
+      function saveInv() {
+        const brand = $("invBrand").value;
+        const type = $("invType").value;
+        if (!brand || brand === "__custom" || !type || type === "__custom") return;
+        const qty = Math.max(0, Math.round(parseFloat($("invQty").value) || 0));
+        const price = round2(parseFloat($("invPrice").value) || 0);
+        const color = $("invColor").value.trim();
+        const hex = $("invHex").value;
+        const weight = Number($("invWeight").value) || 1000;
+        const fields = { brand, type, color, hex, weight, qty, price, taxMode: invTaxMode, cost: finalCost(price, invTaxMode), updated: Date.now() };
+
+        const same = (x) => x.id !== editingInvId && x.brand === brand && x.type === type && x.weight === weight && x.color.toLowerCase() === color.toLowerCase();
+        const dup = inventory.items.find(same);
+
+        if (editingInvId != null) {
+          inventory.items = inventory.items.map((x) => (x.id === editingInvId ? { ...x, ...fields } : x));
+        } else if (dup && confirm(`You already have ${brand} ${type}${color ? " – " + color : ""}.\n\nAdd ${qty} spool${qty === 1 ? "" : "s"} to it (and update its price)?`)) {
+          inventory.items = inventory.items.map((x) => (x.id === dup.id ? { ...x, ...fields, color: x.color, qty: x.qty + qty } : x));
+        } else {
+          let id = Date.now();
+          while (inventory.items.some((x) => x.id === id)) id++;
+          inventory.items.push({ id, ...fields });
+        }
+        meta.lastBrand = brand;
+        meta.lastType = type;
+        meta.lastTaxMode = invTaxMode;
+        saveMeta();
+        closeInvEditor();
+        save();
+      }
+
+      function adjustStock(id, delta) {
+        const it = inventory.items.find((x) => x.id === id);
+        if (!it) return;
+        const q = Math.max(0, it.qty + delta);
+        if (q === it.qty) return;
+        it.qty = q;
+        it.updated = Date.now();
+        save();
+      }
+
+      function deleteInv(id) {
+        const it = inventory.items.find((x) => x.id === id);
+        if (!it || !confirm(`Remove ${it.brand} ${it.type}${it.color ? " – " + it.color : ""} from stock?`)) return;
+        inventory.items = inventory.items.filter((x) => x.id !== id);
+        save();
+      }
+
+      const weightLabel = (g) => (g >= 1000 ? `${round2(g / 1000)} kg` : `${g} g`);
+
+      function renderStock() {
+        const items = inventory.items;
+        const value = items.reduce((a, i) => a + i.qty * i.cost, 0);
+        const spools = items.reduce((a, i) => a + i.qty, 0);
+        const kg = items.reduce((a, i) => a + (i.qty * i.weight) / 1000, 0);
+        const low = items.filter((i) => i.qty <= 1).length;
+        $("stockValue").textContent = money(value);
+        $("statSpools").textContent = spools;
+        $("statKg").textContent = `${round2(kg)} kg`;
+        $("statLow").textContent = low;
+
+        const sel = $("stockFilter");
+        const prev = sel.value || "All";
+        const fams = [...new Set(items.map((i) => family(i.type)))].sort();
+        sel.innerHTML = `<option value="All">All materials</option>` + fams.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join("");
+        sel.value = fams.includes(prev) ? prev : "All";
+
+        if (!items.length) {
+          $("stockList").innerHTML = `<div class="empty"><strong>No filament yet</strong>Tap + to add your spools.</div>`;
+          return;
+        }
+        const f = sel.value;
+        const list = items.filter((i) => f === "All" || family(i.type) === f);
+        const mode = $("stockSort").value;
+        const byName = (a, b) => a.brand.localeCompare(b.brand) || a.type.localeCompare(b.type) || a.color.localeCompare(b.color);
+        if (mode === "material") list.sort((a, b) => a.type.localeCompare(b.type) || byName(a, b));
+        else if (mode === "low") list.sort((a, b) => a.qty - b.qty || byName(a, b));
+        else if (mode === "most") list.sort((a, b) => b.qty - a.qty || byName(a, b));
+        else if (mode === "value") list.sort((a, b) => b.qty * b.cost - a.qty * a.cost || byName(a, b));
+        else list.sort(byName);
+
+        $("stockList").innerHTML = list
+          .map((i) => {
+            const state = i.qty === 0 ? "out" : i.qty === 1 ? "low" : "";
+            const tag = i.qty === 0 ? '<span class="tag out">out</span>' : i.qty === 1 ? '<span class="tag">low</span>' : "";
+            const line1 = [i.brand, i.color].filter(Boolean).map(esc).join(" · ");
+            const line2 = `${weightLabel(i.weight)} • $${money(i.cost)} each` + (i.qty > 1 ? ` • $${money(i.qty * i.cost)}` : "");
+            return `
+            <div class="swipe-item">
+              <div class="swipe-actions">
+                <button class="action-btn edit" data-act="edit-inv" data-id="${i.id}">Edit</button>
+                <button class="action-btn del" data-act="del-inv" data-id="${i.id}">Del</button>
+              </div>
+              <div class="swipe-content">
+                <span class="swatch" style="background:${i.hex || "transparent"}"></span>
+                <div class="sale-main inv-main">
+                  <span class="sale-title">${esc(i.type)}${tag}</span>
+                  <span class="sale-sub">${line1}</span>
+                  <span class="sale-sub num">${line2}</span>
+                </div>
+                <div class="stepper ${state}">
+                  <button data-act="inv-dec" data-id="${i.id}" aria-label="One less spool">−</button>
+                  <b class="num">${i.qty}</b>
+                  <button data-act="inv-inc" data-id="${i.id}" aria-label="One more spool">+</button>
+                </div>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      /* =====================================================
          BACKUP / RESTORE / CSV
          ===================================================== */
       function stamp() {
@@ -1762,7 +2256,7 @@
 
       async function exportJSON() {
         // Same {config, sales} shape as before (extra fields are ignored by older versions)
-        const data = { config, sales, app: "Sol3D", version: 2, exportedAt: new Date().toISOString() };
+        const data = { config, sales, inventory, app: "Sol3D", version: 2, exportedAt: new Date().toISOString() };
         const ok = await deliverFile(JSON.stringify(data, null, 2), `Sol3D_${stamp()}.json`, "application/json");
         if (ok) {
           meta.lastBackup = Date.now();
@@ -1802,18 +2296,24 @@
             }
             const newCfg = normalizeConfig(d.config);
             const newSales = d.sales.map(normalizeSale).filter(Boolean);
+            const hasInv = isObj(d.inventory);
+            const newInv = hasInv ? normalizeInventory(d.inventory) : inventory;
+            const spoolTxt = (inv) => `${inv.items.length} filaments`;
             const ok = confirm(
               `Replace ALL current data with this backup?\n\n` +
-                `Current: ${Object.keys(config).length} products, ${sales.length} sales\n` +
-                `Backup: ${Object.keys(newCfg).length} products, ${newSales.length} sales\n\n` +
+                `Current: ${Object.keys(config).length} products, ${sales.length} sales, ${spoolTxt(inventory)}\n` +
+                `Backup: ${Object.keys(newCfg).length} products, ${newSales.length} sales, ` +
+                (hasInv ? spoolTxt(newInv) : "no filament data (your current stock is kept)") +
+                `\n\n` +
                 `Your current data will be kept for one "Undo last restore".`
             );
             if (!ok) return;
             try {
-              localStorage.setItem(KEY_UNDO, JSON.stringify({ config, sales, savedAt: Date.now() }));
+              localStorage.setItem(KEY_UNDO, JSON.stringify({ config, sales, inventory, savedAt: Date.now() }));
             } catch (err) {}
             config = newCfg;
             sales = newSales;
+            inventory = newInv;
             save();
             switchTab("breakdown");
             alert("Data restored successfully.");
@@ -1829,6 +2329,7 @@
         if (!confirm(`Go back to the data you had before the last restore (${u.sales.length} sales)?`)) return;
         config = normalizeConfig(u.config);
         sales = u.sales.map(normalizeSale).filter(Boolean);
+        if (isObj(u.inventory)) inventory = normalizeInventory(u.inventory);
         localStorage.removeItem(KEY_UNDO);
         save();
       }
@@ -1848,7 +2349,30 @@
       /* =====================================================
          WIRING
          ===================================================== */
-      $("fab").onclick = () => openLogModal();
+      $("fab").onclick = () => (currentTab === "stock" ? openInvEditor() : openLogModal());
+      $("btnCloseInv").onclick = closeInvEditor;
+      $("btnSaveInv").onclick = saveInv;
+      $("invOverlay").onclick = (e) => {
+        if (e.target.id === "invOverlay") closeInvEditor();
+      };
+      $("invBrand").onchange = (e) => {
+        if (e.target.value === "__custom") pickCustom(e.target, "brands", "brand", fillBrandSelect);
+        else e.target.dataset.prev = e.target.value;
+      };
+      $("invType").onchange = (e) => {
+        if (e.target.value === "__custom") pickCustom(e.target, "types", "material", fillTypeSelect);
+        else e.target.dataset.prev = e.target.value;
+      };
+      $("invPrice").oninput = updateInvCost;
+      $("invTaxSeg").onclick = (e) => {
+        const b = e.target.closest("[data-tax]");
+        if (b) setTaxMode(b.dataset.tax);
+      };
+      $("invQtyDec").onclick = () => ($("invQty").value = Math.max(0, (parseInt($("invQty").value) || 0) - 1));
+      $("invQtyInc").onclick = () => ($("invQty").value = (parseInt($("invQty").value) || 0) + 1);
+      $("stockFilter").onchange = renderStock;
+      $("stockSort").onchange = renderStock;
+      bindSwipe($("stockList"));
       $("btnCloseLog").onclick = closeLogModal;
       $("mainLogBtn").onclick = processSale;
       $("selCategory").onchange = () => {
