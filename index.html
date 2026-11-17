@@ -1181,7 +1181,7 @@
             </div>
             <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
           </div>
-          <div class="version">Sol3D v2.2 · data stays on this device</div>
+          <div class="version">Sol3D v2.3 · data stays on this device</div>
         </div>
       </section>
     </div>
@@ -1446,7 +1446,7 @@
            used: { bucketKey: spools used },   // on hand = spools bought − used
            brands: [custom brands], types: [custom materials]
          }
-         A bucket = brand + material + spool size. amount = what was typed; basis "each" | "total";
+         A bucket = brand + material + spool size + colour (case-insensitive). amount = what was typed; basis "each" | "total";
          taxMode "pre" (13% added) | "incl"; total/each = final costs incl. tax.
          v2.1 stored { items: [...] } — those are converted to purchases once (kept in legacyItems). */
       const TAX_RATE = 0.13;
@@ -1463,7 +1463,7 @@
       const ALL_PRESET_TYPES = Object.values(PRESET_TYPES).flat();
       const withTax = (amt, mode) => (Number(amt) || 0) * (mode === "pre" ? 1 + TAX_RATE : 1);
       const family = (t) => (String(t).toUpperCase().match(/^[A-Z]+/) || ["OTHER"])[0];
-      const bucketKey = (x) => `${x.brand}|${x.type}|${x.weight}`;
+      const bucketKey = (x) => `${x.brand}|${x.type}|${x.weight}|${String(x.color || "").trim().toLowerCase()}`;
       const isHex = (h) => /^#[0-9a-f]{6}$/i.test(h);
 
       function normPurchase(p) {
@@ -1508,7 +1508,29 @@
         delete out.items;
         out.purchases = purchases.map(normPurchase).filter(Boolean);
         out.used = {};
-        if (isObj(src.used)) for (const k of Object.keys(src.used)) out.used[k] = Math.round(Number(src.used[k]) || 0);
+        if (isObj(src.used)) {
+          for (const k of Object.keys(src.used)) {
+            let n = Math.round(Number(src.used[k]) || 0);
+            if (k.split("|").length >= 4) {
+              out.used[k] = (out.used[k] || 0) + n;
+              continue;
+            }
+            // v2.2 key without colour: hand the used spools to that group's colour buckets, oldest first
+            const group = out.purchases
+              .filter((p) => `${p.brand}|${p.type}|${p.weight}` === k)
+              .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+            const bought = {};
+            group.forEach((p) => (bought[bucketKey(p)] = (bought[bucketKey(p)] || 0) + p.spools));
+            for (const bk of [...new Set(group.map(bucketKey))]) {
+              if (n <= 0) break;
+              const take = Math.min(n, bought[bk] - (out.used[bk] || 0));
+              if (take > 0) {
+                out.used[bk] = (out.used[bk] || 0) + take;
+                n -= take;
+              }
+            }
+          }
+        }
         const strs = (a) => (Array.isArray(a) ? [...new Set(a.map(String).filter(Boolean))] : []);
         out.brands = strs(src.brands);
         out.types = strs(src.types);
@@ -2120,16 +2142,18 @@
           const k = bucketKey(p);
           let b = map.get(k);
           if (!b) {
-            b = { key: k, brand: p.brand, type: p.type, weight: p.weight, bought: 0, spent: 0, colors: [], hexes: [], last: "" };
+            b = { key: k, brand: p.brand, type: p.type, weight: p.weight, color: p.color, hex: p.hex, bought: 0, spent: 0, last: "", lastId: 0 };
             map.set(k, b);
           }
           b.bought += p.spools;
           b.spent += p.total;
-          if (p.color && !b.colors.some((c) => c.toLowerCase() === p.color.toLowerCase())) {
-            b.colors.push(p.color);
-            if (p.hex) b.hexes.push(p.hex);
+          // colour name as first typed; swatch from the latest purchase
+          if (!b.color && p.color) b.color = p.color;
+          if (p.date > b.last || (p.date === b.last && p.id > b.lastId)) {
+            b.last = p.date;
+            b.lastId = p.id;
+            if (p.hex) b.hex = p.hex;
           }
-          if (p.date > b.last) b.last = p.date;
         }
         for (const b of map.values()) {
           b.used = inventory.used[b.key] || 0;
@@ -2216,8 +2240,8 @@
         fillTypeSelect(base ? base.type : meta.lastType);
         $("invBrand").dataset.prev = $("invBrand").value;
         $("invType").dataset.prev = $("invType").value;
-        $("invColor").value = p ? p.color : "";
-        $("invHex").value = p && p.hex ? p.hex : "#9ca3af";
+        $("invColor").value = base && base.color ? base.color : "";
+        $("invHex").value = base && base.hex ? base.hex : "#9ca3af";
         $("invWeight").value = String(base ? base.weight : 1000);
         if (!$("invWeight").value) $("invWeight").value = "1000";
         $("invQty").value = p ? p.spools : 1;
@@ -2273,7 +2297,7 @@
         if (delta < 0 && b.onHand <= 0) return;
         if (delta > 0 && b.used <= 0) {
           if (confirm("All spools you bought are already in stock.\n\nLog a new purchase for this filament?"))
-            openInvEditor(null, { brand: b.brand, type: b.type, weight: b.weight });
+            openInvEditor(null, { brand: b.brand, type: b.type, weight: b.weight, color: b.color, hex: b.hex });
           return;
         }
         inventory.used[key] = b.used - delta;
@@ -2283,7 +2307,7 @@
       function setStockCount(key) {
         const b = buckets().find((x) => x.key === key);
         if (!b) return;
-        const v = prompt(`Spools of ${b.brand} ${b.type} on hand right now (bought ${b.bought}):`, String(b.onHand));
+        const v = prompt(`Spools of ${b.brand} ${b.type}${b.color ? " – " + b.color : ""} on hand right now (bought ${b.bought}):`, String(b.onHand));
         if (v == null) return;
         const n = Math.round(Number(v));
         if (!Number.isFinite(n) || n < 0 || n > b.bought) {
@@ -2298,7 +2322,7 @@
         const b = buckets().find((x) => x.key === key);
         if (!b) return;
         const n = inventory.purchases.filter((p) => bucketKey(p) === key).length;
-        if (!confirm(`Delete ${b.brand} ${b.type} (${weightLabel(b.weight)}) and its ${n} purchase${n === 1 ? "" : "s"}?\n\nThis also removes $${money(b.spent)} from total spend.`)) return;
+        if (!confirm(`Delete ${b.brand} ${b.type}${b.color ? " – " + b.color : ""} (${weightLabel(b.weight)}) and its ${n} purchase${n === 1 ? "" : "s"}?\n\nThis also removes $${money(b.spent)} from total spend.`)) return;
         inventory.purchases = inventory.purchases.filter((p) => bucketKey(p) !== key);
         delete inventory.used[key];
         save();
@@ -2354,7 +2378,8 @@
         const f = sel.value;
         const list = all.filter((i) => f === "All" || family(i.type) === f);
         const mode = $("stockSort").value;
-        const byName = (a, b) => a.brand.localeCompare(b.brand) || a.type.localeCompare(b.type) || a.weight - b.weight;
+        const byName = (a, b) =>
+          a.brand.localeCompare(b.brand) || a.type.localeCompare(b.type) || (a.color || "").localeCompare(b.color || "") || a.weight - b.weight;
         if (mode === "material") list.sort((a, b) => a.type.localeCompare(b.type) || byName(a, b));
         else if (mode === "low") list.sort((a, b) => a.onHand - b.onHand || byName(a, b));
         else if (mode === "most") list.sort((a, b) => b.onHand - a.onHand || byName(a, b));
@@ -2365,7 +2390,7 @@
           .map((b) => {
             const state = b.onHand === 0 ? "out" : b.onHand === 1 ? "low" : "";
             const tag = b.onHand === 0 ? '<span class="tag out">out</span>' : b.onHand === 1 ? '<span class="tag">low</span>' : "";
-            const line1 = [b.brand, b.colors.join(", ")].filter(Boolean).map(esc).join(" · ");
+            const line1 = [b.brand, b.color || "No colour"].map(esc).join(" · ");
             const line2 = `${weightLabel(b.weight)} • avg $${money(b.avg)} • ${b.bought} bought`;
             const k = esc(b.key);
             return `
@@ -2375,7 +2400,7 @@
                 <button class="action-btn del" data-act="bk-del" data-key="${k}">Del</button>
               </div>
               <div class="swipe-content">
-                ${swatchHTML(b.hexes)}
+                ${swatchHTML(b.hex ? [b.hex] : [])}
                 <div class="sale-main inv-main">
                   <span class="sale-title">${esc(b.type)}${tag}</span>
                   <span class="sale-sub">${line1}</span>
