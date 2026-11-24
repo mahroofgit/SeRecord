@@ -359,6 +359,12 @@
         width: 140px;
         display: flex;
       }
+      .swipe-actions {
+        visibility: hidden;
+      }
+      .swipe-item.swiping .swipe-actions {
+        visibility: visible;
+      }
       .action-btn {
         flex: 1;
         border: none;
@@ -800,7 +806,8 @@
 
       /* ---------- PRODUCT EDITOR ---------- */
       #editorOverlay,
-      #invOverlay {
+      #invOverlay,
+      #useOverlay {
         position: fixed;
         inset: 0;
         z-index: 700;
@@ -813,11 +820,13 @@
         padding: calc(var(--safe-t) + 16px) 16px calc(var(--safe-b) + 16px);
       }
       #editorOverlay.open,
-      #invOverlay.open {
+      #invOverlay.open,
+      #useOverlay.open {
         display: flex;
       }
       #productEditor,
-      #invEditor {
+      #invEditor,
+      #useEditor {
         width: 100%;
         max-width: 460px;
         max-height: 100%;
@@ -829,7 +838,8 @@
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
       }
       #productEditor h3,
-      #invEditor h3 {
+      #invEditor h3,
+      #useEditor h3 {
         margin: 0;
         font-size: 1.15rem;
       }
@@ -899,7 +909,8 @@
         margin: 4px 0 4px;
       }
       #productEditor .primary-btn,
-      #invEditor .primary-btn {
+      #invEditor .primary-btn,
+      #useEditor .primary-btn {
         background: var(--edit);
         color: #082f49;
         min-height: 52px;
@@ -969,7 +980,9 @@
         min-width: 0;
       }
       #invEditor .std-select,
-      #invEditor .std-input {
+      #invEditor .std-input,
+      #useEditor .std-select,
+      #useEditor .std-input {
         background-color: var(--bg-2);
         height: 48px;
         font-size: 1rem;
@@ -1083,6 +1096,50 @@
       }
       #stockSeg {
         margin-bottom: 10px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      #view-stock .hero-stats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+      }
+      #view-stock .stat-label {
+        letter-spacing: 0.6px;
+      }
+      #useEditor .primary-btn {
+        background: var(--warn);
+        color: #422006;
+      }
+      .use-amt {
+        color: var(--warn) !important;
+      }
+      #fabMenu {
+        position: fixed;
+        right: 18px;
+        bottom: calc(var(--tabbar-h) + var(--safe-b) + 84px);
+        z-index: 450;
+        display: none;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+      }
+      #fabMenu.open {
+        display: flex;
+      }
+      #fabMenu button {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 18px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+      #fabMenu .fm-buy {
+        background: var(--accent);
+        color: #052e16;
+      }
+      #fabMenu .fm-use {
+        background: var(--warn);
+        color: #422006;
       }
 
       .hidden {
@@ -1137,13 +1194,15 @@
           <div class="hero-total num">$<span id="spendTotal">0.00</span></div>
           <div class="hero-stats">
             <div><span class="stat-label">In stock</span><span class="stat-val num" id="statOnHand">0</span></div>
-            <div><span class="stat-label">Spools bought</span><span class="stat-val num" id="statBought">0</span></div>
+            <div><span class="stat-label">Used</span><span class="stat-val num" id="statUsed">0</span></div>
+            <div><span class="stat-label">Bought</span><span class="stat-val num" id="statBought">0</span></div>
             <div><span class="stat-label">Avg / spool</span><span class="stat-val num" id="statAvgSpool">$0.00</span></div>
           </div>
         </div>
         <div class="seg two" id="stockSeg">
           <button data-sview="stock" class="active">In stock</button>
           <button data-sview="purchases">Purchases</button>
+          <button data-sview="usage">Usage</button>
         </div>
         <div class="filters" id="stockFilters">
           <select class="std-select" id="stockFilter" style="flex: 1.2"></select>
@@ -1157,6 +1216,7 @@
         </div>
         <div id="stockList" class="scroll has-fab"></div>
         <div id="purchaseList" class="scroll has-fab hidden"></div>
+        <div id="usageList" class="scroll has-fab hidden"></div>
       </section>
 
       <!-- ============ SETUP ============ -->
@@ -1181,7 +1241,7 @@
             </div>
             <button class="link-btn hidden" id="btnUndoRestore">Undo last restore</button>
           </div>
-          <div class="version">Sol3D v2.3 · data stays on this device</div>
+          <div class="version">Sol3D v2.4 · data stays on this device</div>
         </div>
       </section>
     </div>
@@ -1189,6 +1249,11 @@
     <button class="fab" id="fab" aria-label="Log sale">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
     </button>
+
+    <div id="fabMenu">
+      <button class="fm-buy" id="fmBuy">+ Add purchase</button>
+      <button class="fm-use" id="fmUse">− Log usage</button>
+    </div>
 
     <nav class="tab-bar">
       <button id="tab-breakdown" class="tab-item active" data-tab="breakdown">
@@ -1276,6 +1341,52 @@
         <div id="variantList"></div>
         <button class="ghost-btn" id="btnAddVar">+ Add Variety</button>
         <button class="primary-btn" id="btnSaveProduct">SAVE PRODUCT</button>
+      </div>
+    </div>
+
+    <!-- ============ FILAMENT USAGE EDITOR ============ -->
+    <div id="useOverlay">
+      <div id="useEditor" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3 id="useTitle">Log Usage</h3>
+          <button class="close-btn" id="btnCloseUse" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+        <label class="date-row" style="background: var(--bg-2)">
+          <span>DATE FINISHED</span>
+          <input type="date" id="useDate" />
+        </label>
+        <div class="form-field">
+          <div class="field-label">Filament (from stock)</div>
+          <select class="std-select" id="useBucket"></select>
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <div class="field-label">Spools used</div>
+            <div class="qty-input">
+              <button type="button" id="useQtyDec" aria-label="Less">−</button>
+              <input id="useQty" type="number" inputmode="numeric" min="1" step="1" value="1" />
+              <button type="button" id="useQtyInc" aria-label="More">+</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <div class="field-label">Left after</div>
+            <div class="qty-input" style="justify-content: center"><b class="num" id="useLeft">0</b></div>
+          </div>
+        </div>
+        <div class="form-field">
+          <div class="field-label">Note (optional)</div>
+          <input class="std-input" id="useNote" placeholder="e.g. Plant pot batch" autocomplete="off" />
+        </div>
+        <div class="cost-summary" style="background: rgba(252, 211, 77, 0.08); border-color: rgba(252, 211, 77, 0.25)">
+          <div>
+            <span class="stat-label">Filament value used</span>
+            <small id="useNoteCost">at average price</small>
+          </div>
+          <b class="num use-amt" id="useValue">$0.00</b>
+        </div>
+        <button class="primary-btn" id="btnSaveUse">LOG USAGE</button>
       </div>
     </div>
 
@@ -1443,7 +1554,7 @@
       /* ---------- Filament stock ----------
          inventory: {
            purchases: [{ id, date, brand, type, color, hex, weight, spools, amount, basis, taxMode, total, each }],
-           used: { bucketKey: spools used },   // on hand = spools bought − used
+           usages: [{ id, date, key, spools, note, brand, type, color, hex, weight }],  // on hand = bought − used
            brands: [custom brands], types: [custom materials]
          }
          A bucket = brand + material + spool size + colour (case-insensitive). amount = what was typed; basis "each" | "total";
@@ -1482,6 +1593,23 @@
         o.taxMode = p.taxMode === "pre" ? "pre" : "incl";
         o.total = Number(p.total) || round2(withTax(o.amount, o.taxMode) * (o.basis === "each" ? o.spools : 1));
         o.each = Number(p.each) || round2(o.total / o.spools);
+        return o;
+      }
+
+      function normUsage(u) {
+        if (!isObj(u) || !u.key) return null;
+        const o = { ...u };
+        o.id = Number(u.id) || Date.now() + Math.floor(Math.random() * 1e6);
+        o.date = isISODate(u.date) ? u.date : localISO(new Date(o.id));
+        o.key = String(u.key);
+        o.spools = Math.max(1, Math.round(Number(u.spools) || 1));
+        o.note = String(u.note ?? "");
+        const [brand, type, weight] = o.key.split("|");
+        o.brand = String(u.brand || brand || "");
+        o.type = String(u.type || type || "");
+        o.color = String(u.color ?? "");
+        o.hex = isHex(u.hex) ? u.hex : "";
+        o.weight = Number(u.weight) || Number(weight) || 1000;
         return o;
       }
 
@@ -1531,12 +1659,34 @@
             }
           }
         }
+        // v2.3 kept a plain "used" count per bucket; turn it into usage log entries once
+        if (Array.isArray(src.usages)) {
+          out.usages = src.usages.map(normUsage).filter(Boolean);
+        } else {
+          out.usages = [];
+          const today = localISO();
+          let id = Date.now();
+          for (const k of Object.keys(out.used)) {
+            const n = out.used[k];
+            const p = out.purchases.find((x) => bucketKey(x) === k);
+            if (n > 0 && p)
+              out.usages.push(normUsage({ id: id++, date: today, key: k, spools: n, note: "Carried over", brand: p.brand, type: p.type, color: p.color, hex: p.hex, weight: p.weight }));
+          }
+          if (isObj(src.used) && Object.keys(src.used).length) out.legacyUsed = src.used;
+        }
+        delete out.used;
         const strs = (a) => (Array.isArray(a) ? [...new Set(a.map(String).filter(Boolean))] : []);
         out.brands = strs(src.brands);
         out.types = strs(src.types);
         return out;
       }
       let inventory = normalizeInventory(readStore(KEY_INV, {}, isObj));
+      // Persist one-time conversions (older stock formats) right away so they don't re-run
+      try {
+        const rawInv = JSON.parse(localStorage.getItem(KEY_INV) || "null");
+        if (isObj(rawInv) && (!Array.isArray(rawInv.usages) || !Array.isArray(rawInv.purchases)))
+          localStorage.setItem(KEY_INV, JSON.stringify(inventory));
+      } catch (e) {}
 
       function saveMeta() {
         try {
@@ -1574,6 +1724,7 @@
          ===================================================== */
       function switchTab(tab) {
         currentTab = tab;
+        $("fabMenu").classList.remove("open");
         document.querySelectorAll(".tab-item").forEach((t) => t.classList.toggle("active", t.dataset.tab === tab));
         ["breakdown", "history", "stock", "setup"].forEach((k) => $("view-" + k).classList.toggle("hidden", k !== tab));
         updateFab();
@@ -1950,6 +2101,13 @@
       function setX(el, x, animate) {
         el.style.transition = animate ? "" : "none";
         el.style.transform = x ? `translateX(${x}px)` : "";
+        // action buttons only exist visually while a row is moved, so they can't peek at row edges
+        const item = el.parentElement;
+        if (x) item.classList.add("swiping");
+        else
+          setTimeout(() => {
+            if (!el.style.transform) item.classList.remove("swiping");
+          }, animate ? 280 : 0);
       }
       function closeOpenSwipe(animate = true) {
         if (sw.open) setX(sw.open, 0, animate);
@@ -2019,6 +2177,8 @@
             else if (act === "bk-del") deleteBucket(key);
             else if (act === "pur-edit") openInvEditor(Number(id));
             else if (act === "pur-del") deletePurchase(Number(id));
+            else if (act === "use-edit") openUseEditor(Number(id));
+            else if (act === "use-del") deleteUsage(Number(id));
             return;
           }
           // Tapping a row only closes an open swipe; editing is via swipe actions
@@ -2137,6 +2297,8 @@
       let stockView = "stock";
 
       function buckets() {
+        const usedByKey = {};
+        inventory.usages.forEach((u) => (usedByKey[u.key] = (usedByKey[u.key] || 0) + u.spools));
         const map = new Map();
         for (const p of inventory.purchases) {
           const k = bucketKey(p);
@@ -2156,7 +2318,7 @@
           }
         }
         for (const b of map.values()) {
-          b.used = inventory.used[b.key] || 0;
+          b.used = usedByKey[b.key] || 0;
           b.onHand = Math.max(0, b.bought - b.used);
           b.avg = b.bought ? b.spent / b.bought : 0;
         }
@@ -2277,7 +2439,15 @@
           spools: c.spools, amount: c.amount, basis: invBasis, taxMode: invTaxMode, total: c.total, each: c.each,
         };
         if (editingPurId != null) {
+          const old = inventory.purchases.find((x) => x.id === editingPurId);
+          const oldKey = old ? bucketKey(old) : null;
           inventory.purchases = inventory.purchases.map((x) => (x.id === editingPurId ? { ...x, ...fields } : x));
+          // If that bucket no longer exists, its usage history follows the edited purchase
+          const newKey = bucketKey(fields);
+          if (oldKey && oldKey !== newKey && !inventory.purchases.some((x) => bucketKey(x) === oldKey))
+            inventory.usages = inventory.usages.map((u) =>
+              u.key === oldKey ? { ...u, key: newKey, brand: fields.brand, type: fields.type, color: fields.color, hex: fields.hex, weight: fields.weight } : u
+            );
         } else {
           let id = Date.now();
           while (inventory.purchases.some((x) => x.id === id)) id++;
@@ -2290,17 +2460,47 @@
         save();
       }
 
+      const snap = (b) => ({ key: b.key, brand: b.brand, type: b.type, color: b.color, hex: b.hex, weight: b.weight });
+      const newUsageId = () => {
+        let id = Date.now();
+        while (inventory.usages.some((x) => x.id === id)) id++;
+        return id;
+      };
+
+      function addUsage(b, spools, date, note = "") {
+        // fold quick taps on the same day into one log line
+        const same = inventory.usages.find((u) => u.key === b.key && u.date === date && !u.note && !note);
+        if (same) same.spools += spools;
+        else inventory.usages.push(normUsage({ id: newUsageId(), date, spools, note, ...snap(b) }));
+      }
+
+      // take spools back off the newest usage entries of a bucket
+      function removeUsage(key, spools) {
+        const list = inventory.usages.filter((u) => u.key === key).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+        for (const u of list) {
+          if (spools <= 0) break;
+          const take = Math.min(spools, u.spools);
+          u.spools -= take;
+          spools -= take;
+        }
+        inventory.usages = inventory.usages.filter((u) => u.spools > 0);
+      }
+
       function adjustStock(key, delta) {
         const b = buckets().find((x) => x.key === key);
         if (!b) return;
-        // − uses a spool, + puts one back (can't exceed what's been bought)
-        if (delta < 0 && b.onHand <= 0) return;
-        if (delta > 0 && b.used <= 0) {
-          if (confirm("All spools you bought are already in stock.\n\nLog a new purchase for this filament?"))
-            openInvEditor(null, { brand: b.brand, type: b.type, weight: b.weight, color: b.color, hex: b.hex });
-          return;
+        // − logs one spool used today, + undoes the latest usage
+        if (delta < 0) {
+          if (b.onHand <= 0) return;
+          addUsage(b, 1, localISO());
+        } else {
+          if (b.used <= 0) {
+            if (confirm("All spools you bought are already in stock.\n\nLog a new purchase for this filament?"))
+              openInvEditor(null, { brand: b.brand, type: b.type, weight: b.weight, color: b.color, hex: b.hex });
+            return;
+          }
+          removeUsage(key, 1);
         }
-        inventory.used[key] = b.used - delta;
         save();
       }
 
@@ -2314,7 +2514,8 @@
           alert(`Enter a number from 0 to ${b.bought}. To add more, log a purchase.`);
           return;
         }
-        inventory.used[key] = b.bought - n;
+        if (n < b.onHand) addUsage(b, b.onHand - n, localISO(), "Stock count");
+        else if (n > b.onHand) removeUsage(key, n - b.onHand);
         save();
       }
 
@@ -2322,9 +2523,10 @@
         const b = buckets().find((x) => x.key === key);
         if (!b) return;
         const n = inventory.purchases.filter((p) => bucketKey(p) === key).length;
-        if (!confirm(`Delete ${b.brand} ${b.type}${b.color ? " – " + b.color : ""} (${weightLabel(b.weight)}) and its ${n} purchase${n === 1 ? "" : "s"}?\n\nThis also removes $${money(b.spent)} from total spend.`)) return;
+        const u = inventory.usages.filter((x) => x.key === key).length;
+        if (!confirm(`Delete ${b.brand} ${b.type}${b.color ? " – " + b.color : ""} (${weightLabel(b.weight)}) with its ${n} purchase${n === 1 ? "" : "s"}${u ? ` and ${u} usage entr${u === 1 ? "y" : "ies"}` : ""}?\n\nThis also removes $${money(b.spent)} from total spend.`)) return;
         inventory.purchases = inventory.purchases.filter((p) => bucketKey(p) !== key);
-        delete inventory.used[key];
+        inventory.usages = inventory.usages.filter((x) => x.key !== key);
         save();
       }
 
@@ -2332,12 +2534,134 @@
         const p = inventory.purchases.find((x) => x.id === id);
         if (!p || !confirm(`Delete this purchase?\n\n${p.brand} ${p.type} · ${p.spools} spool${p.spools === 1 ? "" : "s"} · $${money(p.total)}`)) return;
         inventory.purchases = inventory.purchases.filter((x) => x.id !== id);
-        // keep "used" within what's still bought
-        const k = bucketKey(p);
-        const bought = inventory.purchases.filter((x) => bucketKey(x) === k).reduce((a, x) => a + x.spools, 0);
-        if (!bought) delete inventory.used[k];
-        else if ((inventory.used[k] || 0) > bought) inventory.used[k] = bought;
         save();
+      }
+
+      /* ---------- Usage log ---------- */
+      let editingUseId = null;
+
+      function bucketLabel(b) {
+        return `${b.type} · ${b.color || "No colour"} · ${b.brand} · ${weightLabel(b.weight)}`;
+      }
+
+      function openUseEditor(id, presetKey) {
+        const u = id != null ? inventory.usages.find((x) => x.id === id) : null;
+        editingUseId = u ? u.id : null;
+        const all = buckets();
+        const pick = all.filter((b) => b.onHand > 0 || (u && b.key === u.key));
+        if (!pick.length) {
+          alert("Nothing in stock to use. Log a filament purchase first.");
+          return;
+        }
+        pick.sort((a, b) => a.type.localeCompare(b.type) || (a.color || "").localeCompare(b.color || "") || a.brand.localeCompare(b.brand));
+        $("useBucket").innerHTML = pick
+          .map((b) => `<option value="${esc(b.key)}">${esc(bucketLabel(b))} (${b.onHand + (u && b.key === u.key ? u.spools : 0)} left)</option>`)
+          .join("");
+        const want = u ? u.key : presetKey;
+        if (want && pick.some((b) => b.key === want)) $("useBucket").value = want;
+        $("useDate").value = u ? u.date : localISO();
+        $("useDate").max = localISO();
+        $("useQty").value = u ? u.spools : 1;
+        $("useNote").value = u ? u.note : "";
+        $("useTitle").textContent = u ? "Edit Usage" : "Log Usage";
+        $("btnSaveUse").textContent = u ? "SAVE CHANGES" : "LOG USAGE";
+        updateUseInfo();
+        $("useOverlay").classList.add("open");
+      }
+
+      function closeUseEditor() {
+        $("useOverlay").classList.remove("open");
+        editingUseId = null;
+      }
+
+      function useAvailable() {
+        const b = buckets().find((x) => x.key === $("useBucket").value);
+        if (!b) return { b: null, avail: 0 };
+        const own = editingUseId != null ? inventory.usages.find((x) => x.id === editingUseId) : null;
+        return { b, avail: b.onHand + (own && own.key === b.key ? own.spools : 0) };
+      }
+
+      function updateUseInfo() {
+        const { b, avail } = useAvailable();
+        const q = Math.max(1, Math.round(parseFloat($("useQty").value) || 1));
+        $("useLeft").textContent = Math.max(0, avail - q);
+        $("useLeft").style.color = q > avail ? "var(--danger)" : "";
+        $("useValue").textContent = "$" + money(b ? q * b.avg : 0);
+        $("useNoteCost").textContent = b ? `${q} × $${money(b.avg)} average` : "";
+      }
+
+      function saveUse() {
+        const { b, avail } = useAvailable();
+        if (!b) return;
+        const date = $("useDate").value;
+        if (!isISODate(date)) {
+          nudge($("useDate").parentElement);
+          return;
+        }
+        const q = Math.max(1, Math.round(parseFloat($("useQty").value) || 1));
+        if (q > avail) {
+          alert(`Only ${avail} spool${avail === 1 ? "" : "s"} of this filament in stock.`);
+          return;
+        }
+        const note = $("useNote").value.trim();
+        if (editingUseId != null) {
+          inventory.usages = inventory.usages.map((x) => (x.id === editingUseId ? normUsage({ ...x, ...snap(b), date, spools: q, note }) : x));
+        } else {
+          inventory.usages.push(normUsage({ id: newUsageId(), date, spools: q, note, ...snap(b) }));
+        }
+        closeUseEditor();
+        save();
+      }
+
+      function deleteUsage(id) {
+        const u = inventory.usages.find((x) => x.id === id);
+        if (!u || !confirm(`Delete this usage entry?\n\n${u.type}${u.color ? " – " + u.color : ""} · ${u.spools} spool${u.spools === 1 ? "" : "s"}\n\nThe spools go back into stock.`)) return;
+        inventory.usages = inventory.usages.filter((x) => x.id !== id);
+        save();
+      }
+
+      function renderUsage() {
+        const avgByKey = {};
+        buckets().forEach((b) => (avgByKey[b.key] = b.avg));
+        const list = [...inventory.usages].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+        if (!list.length) {
+          $("usageList").innerHTML = `<div class="empty"><strong>No usage logged</strong>When a spool runs out, tap + and choose Log usage, or tap − on a filament in stock.</div>`;
+          return;
+        }
+        const monthSpools = {};
+        list.forEach((u) => (monthSpools[u.date.slice(0, 7)] = (monthSpools[u.date.slice(0, 7)] || 0) + u.spools));
+        let last = null;
+        let html = "";
+        for (const u of list) {
+          const m = u.date.slice(0, 7);
+          if (m !== last) {
+            last = m;
+            const [y, mo] = m.split("-");
+            html += `<div class="day-sep"><span>${MONTHS[Number(mo) - 1]} ${y}</span><span class="num">${monthSpools[m]} spool${monthSpools[m] === 1 ? "" : "s"} used</span></div>`;
+          }
+          const sub = [fmtDate(u.date), u.brand, u.color || "No colour", weightLabel(u.weight)].map(esc).join(" • ");
+          const val = (avgByKey[u.key] || 0) * u.spools;
+          html += `
+            <div class="swipe-item">
+              <div class="swipe-actions">
+                <button class="action-btn edit" data-act="use-edit" data-id="${u.id}">Edit</button>
+                <button class="action-btn del" data-act="use-del" data-id="${u.id}">Del</button>
+              </div>
+              <div class="swipe-content">
+                ${swatchHTML(u.hex ? [u.hex] : [])}
+                <div class="sale-main inv-main">
+                  <span class="sale-title">${esc(u.type)} · ${u.spools}x</span>
+                  <span class="sale-sub">${sub}</span>
+                  ${u.note ? `<span class="sale-sub" style="color:var(--text);text-transform:none">${esc(u.note)}</span>` : ""}
+                </div>
+                <div class="sale-amt num">
+                  <b class="use-amt">−${u.spools}</b>
+                  ${val ? `<small>≈ $${money(val)}</small>` : ""}
+                </div>
+              </div>
+            </div>`;
+        }
+        $("usageList").innerHTML = html;
       }
 
       const weightLabel = (g) => (g >= 1000 ? `${round2(g / 1000)} kg` : `${g} g`);
@@ -2357,12 +2681,15 @@
         $("spendTotal").textContent = money(spent);
         $("statOnHand").textContent = all.reduce((a, b) => a + b.onHand, 0);
         $("statBought").textContent = bought;
+        $("statUsed").textContent = inventory.usages.reduce((a, u) => a + u.spools, 0);
         $("statAvgSpool").textContent = "$" + money(bought ? spent / bought : 0);
 
         document.querySelectorAll("#stockSeg button").forEach((b) => b.classList.toggle("active", b.dataset.sview === stockView));
         $("stockList").classList.toggle("hidden", stockView !== "stock");
         $("stockFilters").classList.toggle("hidden", stockView !== "stock");
         $("purchaseList").classList.toggle("hidden", stockView !== "purchases");
+        $("usageList").classList.toggle("hidden", stockView !== "usage");
+        renderUsage();
         renderPurchases();
 
         const sel = $("stockFilter");
@@ -2584,7 +2911,41 @@
       /* =====================================================
          WIRING
          ===================================================== */
-      $("fab").onclick = () => (currentTab === "stock" ? openInvEditor() : openLogModal());
+      $("fab").onclick = (e) => {
+        e.stopPropagation();
+        if (currentTab !== "stock") return openLogModal();
+        if (stockView === "purchases") return openInvEditor();
+        if (stockView === "usage") return openUseEditor();
+        $("fabMenu").classList.toggle("open");
+      };
+      const closeFabMenu = () => $("fabMenu").classList.remove("open");
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#fabMenu")) closeFabMenu();
+      });
+      $("fmBuy").onclick = () => {
+        closeFabMenu();
+        openInvEditor();
+      };
+      $("fmUse").onclick = () => {
+        closeFabMenu();
+        openUseEditor();
+      };
+      $("btnCloseUse").onclick = closeUseEditor;
+      $("btnSaveUse").onclick = saveUse;
+      $("useOverlay").onclick = (e) => {
+        if (e.target.id === "useOverlay") closeUseEditor();
+      };
+      $("useBucket").onchange = updateUseInfo;
+      $("useQty").oninput = updateUseInfo;
+      $("useQtyDec").onclick = () => {
+        $("useQty").value = Math.max(1, (parseInt($("useQty").value) || 1) - 1);
+        updateUseInfo();
+      };
+      $("useQtyInc").onclick = () => {
+        $("useQty").value = (parseInt($("useQty").value) || 0) + 1;
+        updateUseInfo();
+      };
+      bindSwipe($("usageList"));
       $("btnCloseInv").onclick = closeInvEditor;
       $("btnSaveInv").onclick = saveInv;
       $("invOverlay").onclick = (e) => {

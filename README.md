@@ -16,7 +16,7 @@ All data lives in the device's `localStorage`:
 |---|---|
 | `3D_CFG_v21` | `{ "Product": { "Variety": defaultPrice } }` |
 | `3D_SLS_v21` | `[{ id, cat, var, qty, unit, total, manualDate: "YYYY-MM-DD", ts, rawTs }]` |
-| `3D_INV_v1` | filament stock: `{ purchases: [{ id, date, brand, type, color, hex, weight, spools, amount, basis, taxMode, total, each }], used: { "brand\|type\|weight\|colour": n }, brands, types }`. Stock is grouped into buckets by brand + material + spool size + colour (case-insensitive; v2.2 keys without colour are migrated); on hand = spools bought − used. `total`/`each` are final costs incl. 13% tax. v2.1 `items` are converted to purchases once (originals kept in `legacyItems`). |
+| `3D_INV_v1` | filament stock: `{ purchases: [{ id, date, brand, type, color, hex, weight, spools, amount, basis, taxMode, total, each }], usages: [{ id, date, key, spools, note, brand, type, color, hex, weight }], brands, types }`. Stock is grouped into buckets by brand + material + spool size + colour (case-insensitive; v2.2 keys without colour are migrated); on hand = spools bought − spools in `usages` (bucket `key` = brand, type, weight, colour joined by a pipe). Older `used` counts are converted to usage entries once (kept in `legacyUsed`). `total`/`each` are final costs incl. 13% tax. v2.1 `items` are converted to purchases once (originals kept in `legacyItems`). |
 | `SeRecord_meta` | UI prefs + last backup time (safe to lose) |
 | `SeRecord_preRestore` | copy of data from before the last JSON restore |
 
